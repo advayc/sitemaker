@@ -12,9 +12,10 @@ interface EditableFieldProps {
   multiline?: boolean
   className?: string
   placeholder?: string
+  showEditIcon?: boolean
 }
 
-export function EditableField({ value, onSave, multiline = false, className = "", placeholder }: EditableFieldProps) {
+export function EditableField({ value, onSave, multiline = false, className = "", placeholder, showEditIcon = true }: EditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(value)
 
@@ -49,10 +50,10 @@ export function EditableField({ value, onSave, multiline = false, className = ""
           />
         )}
         <div className="flex gap-1">
-          <Button size="sm" variant="default" onClick={handleSave}>
+          <Button size="sm" variant="minimal" onClick={handleSave} className="shadow-sm hover:shadow-md transition-shadow duration-200">
             <Check className="w-3 h-3" />
           </Button>
-          <Button size="sm" variant="outline" onClick={handleCancel}>
+          <Button size="sm" variant="minimal" onClick={handleCancel} className="shadow-sm hover:shadow-md transition-shadow duration-200">
             <X className="w-3 h-3" />
           </Button>
         </div>
@@ -61,16 +62,18 @@ export function EditableField({ value, onSave, multiline = false, className = ""
   }
 
   return (
-    <div className="group relative">
-      <div className={className}>{value}</div>
-      <Button
-        size="sm"
-        variant="ghost"
-        className="absolute -right-8 top-0 opacity-0 group-hover:opacity-100 transition-opacity"
-        onClick={() => setIsEditing(true)}
-      >
-        <Edit2 className="w-3 h-3" />
-      </Button>
+    <div className="group relative hover:bg-gray-50 rounded px-1 -mx-1">
+      <div className={`${className} relative z-10`}>{value || placeholder}</div>
+      {showEditIcon && (
+        <Button
+          size="sm"
+          variant="minimal"
+          className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm hover:shadow-md p-1"
+          onClick={() => setIsEditing(true)}
+        >
+          <Edit2 className="w-3 h-3" />
+        </Button>
+      )}
     </div>
   )
 }

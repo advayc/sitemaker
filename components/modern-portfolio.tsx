@@ -1,16 +1,24 @@
 "use client"
 
 import { useState } from "react"
-import type { ProfileData } from "@/types/profile"
+import type { ProfileData, Experience } from "@/types/profile"
 import { Button } from "@/components/ui/button"
+import { EditableField } from "@/components/editable-field"
 import { generateWebsiteHTML } from "@/lib/html-generator"
+
+// Helper function to format URLs without http/https prefix
+const formatUrl = (url: string): string => {
+  return url.replace(/^https?:\/\//, '')
+}
 
 interface ModernPortfolioProps {
   profileData: ProfileData
   onEdit: () => void
 }
 
-export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
+export function ModernPortfolio({ profileData: initialData, onEdit }: ModernPortfolioProps) {
+  const [profileData, setProfileData] = useState(initialData)
+  
   const safeArray = <T,>(val: T[] | undefined | null): T[] => (Array.isArray(val) ? val : [])
   const safeString = (val: any): string => {
     if (typeof val === "string") return val
@@ -18,6 +26,64 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
       return val.name || val.title || val.value || JSON.stringify(val)
     }
     return String(val || "")
+  }
+
+    const githubLink = safeArray(profileData.socialLinks).find(link => 
+    safeString(link.platform).toLowerCase().includes('github')
+  )
+
+  // Update functions for editing
+  const updateField = (field: string, value: string) => {
+    setProfileData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const updateExperience = (index: number, field: keyof Experience, value: string) => {
+    setProfileData((prev) => ({
+      ...prev,
+      experience: safeArray(prev.experience).map((exp, i) => (i === index ? { ...exp, [field]: value } : exp)),
+    }))
+  }
+
+  const updateSkill = (index: number, value: string) => {
+    setProfileData((prev) => ({
+      ...prev,
+      skills: safeArray(prev.skills).map((skill, i) => (i === index ? value : skill)),
+    }))
+  }
+
+  const updateEducation = (index: number, field: string, value: string) => {
+    setProfileData((prev) => ({
+      ...prev,
+      education: safeArray(prev.education).map((edu, i) => (i === index ? { ...edu, [field]: value } : edu)),
+    }))
+  }
+
+  const updateProject = (index: number, field: string, value: string) => {
+    setProfileData((prev) => ({
+      ...prev,
+      projects: safeArray(prev.projects).map((proj, i) => (i === index ? { ...proj, [field]: value } : proj)),
+    }))
+  }
+
+  const updateProjectTechnology = (projIndex: number, techIndex: number, value: string) => {
+    setProfileData((prev) => ({
+      ...prev,
+      projects: safeArray(prev.projects).map((proj, i) => 
+        i === projIndex 
+          ? { 
+              ...proj, 
+              technologies: safeArray(proj.technologies).map((tech, j) => j === techIndex ? value : tech)
+            } 
+          : proj
+      ),
+    }))
+  }
+
+  const updateSocialLink = (index: number, field: 'platform' | 'url', value: string) => {
+    setProfileData((prev) => ({
+      ...prev,
+      socialLinks: safeArray(prev.socialLinks).map((social, i) => (i === index ? { ...social, [field]: value } : social)),
+    }))
   }
 
   // Download HTML functionality
@@ -38,11 +104,6 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
       alert('Error generating HTML file. Please try again.')
     }
   }
-
-  // Get GitHub URL from social links
-  const githubLink = safeArray(profileData.socialLinks).find(link => 
-    safeString(link.platform).toLowerCase().includes('github')
-  )
 
   return (
     <div className="min-h-screen bg-white font-mono">
@@ -114,23 +175,36 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
 
         {/* Header Section */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2 text-black">
-            {safeString(profileData.name)}
-          </h1>
+          <EditableField
+            value={safeString(profileData.name)}
+            onSave={(value) => updateField("name", value)}
+            className="text-2xl font-bold mb-2 text-black"
+            placeholder="Your Name"
+          />
           
           {profileData.location && (
-            <p className="text-gray-600 mb-4">
-              📍 {safeString(profileData.location)}
-            </p>
+            <div className="text-gray-600 mb-4 flex items-center gap-1">
+              <span>📍</span>
+              <EditableField
+                value={safeString(profileData.location)}
+                onSave={(value) => updateField("location", value)}
+                className=""
+                placeholder="Your Location"
+              />
+            </div>
           )}
         </div>
 
         {/* About Section */}
         <section className="mb-8">
           <h2 className="text-xl font-bold text-black mb-4">About</h2>
-          <p className="text-gray-600 leading-relaxed">
-            {safeString(profileData.summary)}
-          </p>
+          <EditableField
+            value={safeString(profileData.summary)}
+            onSave={(value) => updateField("summary", value)}
+            multiline
+            className="text-gray-600 leading-relaxed"
+            placeholder="Your professional summary"
+          />
         </section>
 
         {/* Work Experience Section */}
@@ -142,25 +216,44 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
                 <div key={index} className="space-y-2">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-black text-base">
-                        {safeString(exp.position)}
-                      </h3>
+                      <EditableField
+                        value={safeString(exp.position)}
+                        onSave={(value) => updateExperience(index, "position", value)}
+                        className="font-semibold text-black text-base"
+                        placeholder="Job Title"
+                      />
                       <div className="flex items-center gap-2 text-gray-600">
-                        <span>{safeString(exp.company)}</span>
+                        <EditableField
+                          value={safeString(exp.company)}
+                          onSave={(value) => updateExperience(index, "company", value)}
+                          className=""
+                          placeholder="Company Name"
+                        />
                         <span>•</span>
                         <span>Full-Time</span>
                       </div>
                     </div>
                     <div className="text-right text-gray-600 ml-4">
-                      <div className="whitespace-nowrap">
-                        {safeString(exp.startDate)} - {safeString(exp.endDate)}
-                      </div>
+                      <EditableField
+                        value={`${safeString(exp.startDate)} - ${safeString(exp.endDate)}`}
+                        onSave={(value) => {
+                          const [start, end] = value.split(" - ")
+                          updateExperience(index, "startDate", start || safeString(exp.startDate))
+                          updateExperience(index, "endDate", end || safeString(exp.endDate))
+                        }}
+                        className="whitespace-nowrap"
+                        placeholder="Start Date - End Date"
+                      />
                     </div>
                   </div>
                   {exp.description && (
-                    <p className="text-gray-600 leading-relaxed">
-                      {safeString(exp.description)}
-                    </p>
+                    <EditableField
+                      value={safeString(exp.description)}
+                      onSave={(value) => updateExperience(index, "description", value)}
+                      multiline
+                      className="text-gray-600 leading-relaxed"
+                      placeholder="Job description and achievements"
+                    />
                   )}
                 </div>
               ))}
@@ -176,16 +269,38 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
               {safeArray(profileData.education).map((edu, index) => (
                 <div key={index} className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-semibold text-black">
-                      {safeString(edu.institution)}
-                    </h3>
-                    <p className="text-gray-600">
-                      {safeString(edu.degree)} in {safeString(edu.field)}
-                    </p>
+                    <EditableField
+                      value={safeString(edu.institution)}
+                      onSave={(value) => updateEducation(index, "institution", value)}
+                      className="font-semibold text-black"
+                      placeholder="Institution Name"
+                    />
+                    <div className="text-gray-600 flex gap-2">
+                      <EditableField
+                        value={safeString(edu.degree)}
+                        onSave={(value) => updateEducation(index, "degree", value)}
+                        className=""
+                        placeholder="Degree"
+                      />
+                      <span>in</span>
+                      <EditableField
+                        value={safeString(edu.field)}
+                        onSave={(value) => updateEducation(index, "field", value)}
+                        className=""
+                        placeholder="Field of Study"
+                      />
+                    </div>
                   </div>
-                  <span className="text-gray-600 ml-4">
-                    {safeString(edu.startDate)} - {safeString(edu.endDate)}
-                  </span>
+                  <EditableField
+                    value={`${safeString(edu.startDate)} - ${safeString(edu.endDate)}`}
+                    onSave={(value) => {
+                      const [start, end] = value.split(" - ")
+                      updateEducation(index, "startDate", start || safeString(edu.startDate))
+                      updateEducation(index, "endDate", end || safeString(edu.endDate))
+                    }}
+                    className="text-gray-600 ml-4"
+                    placeholder="Start - End"
+                  />
                 </div>
               ))}
             </div>
@@ -194,8 +309,19 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
 
         {/* Skills Section */}
         {safeArray(profileData.skills).length > 0 && (
-          <section className="mb-8">
+          <section className="mb-8 group relative">
             <h2 className="text-xl font-bold text-black mb-4">Skills</h2>
+            <Button
+              variant="minimal"
+              size="sm"
+              className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={() => {
+                // Container-level editing for skills section
+                alert("Edit Skills section")
+              }}
+            >
+              <span className="text-xs">Edit</span>
+            </Button>
             <div className="flex flex-wrap gap-2">
               {safeArray(profileData.skills).map((skill, index) => (
                 <span 
@@ -218,12 +344,19 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
                 <div key={index} className="space-y-2">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-black text-base">
-                        {safeString(project.name)}
-                      </h3>
-                      <p className="text-gray-600 leading-relaxed mb-2">
-                        {safeString(project.description)}
-                      </p>
+                      <EditableField
+                        value={safeString(project.name)}
+                        onSave={(value) => updateProject(index, "name", value)}
+                        className="font-semibold text-black text-base"
+                        placeholder="Project Name"
+                      />
+                      <EditableField
+                        value={safeString(project.description)}
+                        onSave={(value) => updateProject(index, "description", value)}
+                        multiline
+                        className="text-gray-600 leading-relaxed mb-2"
+                        placeholder="Project description"
+                      />
                       
                       {/* Technologies */}
                       {safeArray(project.technologies).length > 0 && (
@@ -231,9 +364,15 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
                           {safeArray(project.technologies).map((tech, techIndex) => (
                             <span 
                               key={techIndex}
-                              className="px-2 py-0.5 bg-gray-50 text-gray-600 rounded text-xs font-medium border"
+                              className="px-2 py-0.5 bg-gray-50 text-gray-600 rounded text-xs font-medium border group relative"
                             >
-                              {safeString(tech)}
+                              <EditableField
+                                value={safeString(tech)}
+                                onSave={(value) => updateProjectTechnology(index, techIndex, value)}
+                                className="text-inherit"
+                                placeholder="Technology"
+                                showEditIcon={false}
+                              />
                             </span>
                           ))}
                         </div>
@@ -248,7 +387,7 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
                             rel="noopener noreferrer"
                             className="text-blue-600 underline font-normal hover:no-underline"
                           >
-                            GitHub
+                            {formatUrl(safeString(project.githubUrl))}
                           </a>
                         )}
                         {project.url && (
@@ -258,7 +397,7 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
                             rel="noopener noreferrer"
                             className="text-blue-600 underline font-normal hover:no-underline"
                           >
-                            Website
+                            {formatUrl(safeString(project.url))}
                           </a>
                         )}
                       </div>
