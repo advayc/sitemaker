@@ -327,23 +327,13 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
 </head>
 <body>
     <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <h1 class="header-title">${data.name}</h1>
-                <div class="header-buttons">
-                    <button class="btn btn-minimal" onclick="window.history.back()">Back to Upload</button>
-                    <button class="btn btn-silver" onclick="downloadHTML()">Download HTML</button>
-                </div>
-            </div>
-        </header>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Top Navigation -->
             <div class="top-nav">
                 <div class="nav-links">
-                    ${data.email ? `<a href="mailto:${data.email}" class="nav-link">CONTACT</a>` : ''}
+                    ${data.email ? `<a href="mailto:${data.email}" class="nav-link">EMAIL</a>` : ''}
                     ${data.socialLinks.map(social => {
                         let url = social.url;
                         // Fix URL if it doesn't start with http/https
