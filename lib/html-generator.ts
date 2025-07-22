@@ -358,7 +358,6 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
             <!-- Profile Header -->
             <div class="profile-header">
                 <h1 class="profile-name">${data.name}</h1>
-                <p class="profile-summary">${data.summary}</p>
                 ${data.location ? `<p class="profile-location">📍 ${data.location}</p>` : ''}
             </div>
 
