@@ -19,6 +19,11 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
     return String(val || "")
   }
 
+  // Get GitHub URL from social links
+  const githubLink = safeArray(profileData.socialLinks).find(link => 
+    safeString(link.platform).toLowerCase().includes('github')
+  )
+
   return (
     <div className="min-h-screen bg-white font-mono">
       {/* Header */}
@@ -37,7 +42,7 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-[700px] mx-auto px-6 py-6 leading-relaxed text-[15px]">
+      <main className="max-w-[700px] mx-auto px-6 py-8 leading-relaxed text-[15px]">
         
         {/* Top Navigation */}
         <div className="text-right mb-8">
@@ -61,140 +66,119 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
                 {safeString(social.platform).toUpperCase()}
               </a>
             ))}
+            {githubLink && (
+              <a
+                href={safeString(githubLink.url)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline font-normal hover:no-underline"
+              >
+                GITHUB
+              </a>
+            )}
           </div>
         </div>
 
-        {/* Header with decorative square */}
-        <div className="flex items-start gap-4 mb-8">
-          <div className="w-4 h-4 bg-purple-600 mt-1 flex-shrink-0"></div>
-          <div className="flex-1">
-            <h1 className="text-[22px] font-bold uppercase mb-4">
-              HEY, I&apos;M {safeString(profileData.name).toUpperCase()}.
-            </h1>
-            
-            <p className="mb-4 text-black">
-              {safeString(profileData.summary).toLowerCase()}
-              {profileData.location && (
-                <> currently based in <a 
-                  href="#" 
-                  className="text-blue-600 underline hover:no-underline"
-                >
-                  {safeString(profileData.location).toLowerCase()}
-                </a></>
-              )}
+        {/* Header Section */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold mb-2 text-black">
+            {safeString(profileData.name)}
+          </h1>
+          
+          <p className="text-gray-600 mb-4 leading-relaxed">
+            {safeString(profileData.summary)}
+          </p>
+
+          {profileData.location && (
+            <p className="text-gray-600 mb-4">
+              📍 {safeString(profileData.location)}
             </p>
-          </div>
+          )}
         </div>
+
+        {/* About Section */}
+        <section className="mb-8">
+          <h2 className="text-lg font-bold text-black mb-4">About</h2>
+          <p className="text-gray-600 leading-relaxed">
+            {safeString(profileData.summary)}
+          </p>
+        </section>
+
+        {/* Work Experience Section */}
+        {safeArray(profileData.experience).length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-lg font-bold text-black mb-4">Work Experience</h2>
+            <div className="space-y-6">
+              {safeArray(profileData.experience).map((exp, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-black text-base">
+                        {safeString(exp.position)}
+                      </h3>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <span>{safeString(exp.company)}</span>
+                        <span>•</span>
+                        <span>Full-Time</span>
+                      </div>
+                    </div>
+                    <div className="text-right text-gray-600 ml-4">
+                      <div className="whitespace-nowrap">
+                        {safeString(exp.startDate)} - {safeString(exp.endDate)}
+                      </div>
+                    </div>
+                  </div>
+                  {exp.description && (
+                    <p className="text-gray-600 leading-relaxed">
+                      {safeString(exp.description)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Education Section */}
         {safeArray(profileData.education).length > 0 && (
-          <section className="mt-8">
-            <h2 className="text-[13px] font-bold uppercase mb-4">
-              EDUCATION:
-            </h2>
-            <ul className="pl-6 list-disc space-y-2">
+          <section className="mb-8">
+            <h2 className="text-lg font-bold text-black mb-4">Education</h2>
+            <div className="space-y-4">
               {safeArray(profileData.education).map((edu, index) => (
-                <li key={index}>
-                  {safeString(edu.degree).toLowerCase()} in {safeString(edu.field).toLowerCase()} from{' '}
-                  <a 
-                    href={edu.institutionUrl || '#'} 
-                    className="text-blue-600 underline hover:no-underline"
-                  >
-                    {safeString(edu.institution).toLowerCase()}
-                  </a>
-                  {' '}({safeString(edu.startDate)} - {safeString(edu.endDate)})
-                </li>
+                <div key={index} className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-black">
+                      {safeString(edu.institution)}
+                    </h3>
+                    <p className="text-gray-600">
+                      {safeString(edu.degree)} in {safeString(edu.field)}
+                    </p>
+                  </div>
+                  <span className="text-gray-600 ml-4">
+                    {safeString(edu.startDate)} - {safeString(edu.endDate)}
+                  </span>
+                </div>
               ))}
-            </ul>
-          </section>
-        )}
-
-        {/* Experience Section */}
-        {safeArray(profileData.experience).length > 0 && (
-          <section className="mt-8">
-            <h2 className="text-[13px] font-bold uppercase mb-4">
-              EXPERIENCE:
-            </h2>
-            <ul className="pl-6 list-disc space-y-2">
-              {safeArray(profileData.experience).map((exp, index) => (
-                <li key={index}>
-                  {safeString(exp.position).toLowerCase()} at{' '}
-                  <a 
-                    href={exp.companyUrl || '#'} 
-                    className="text-blue-600 underline hover:no-underline"
-                  >
-                    {safeString(exp.company).toLowerCase()}
-                  </a>
-                  {' '}({safeString(exp.startDate)} - {safeString(exp.endDate)})
-                  {exp.description && (
-                    <div className="mt-1 text-sm">
-                      {safeString(exp.description).toLowerCase()}
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {/* Projects Section */}
-        {safeArray(profileData.projects).length > 0 && (
-          <section className="mt-8">
-            <h2 className="text-[13px] font-bold uppercase mb-4">
-              SOME PROJECTS I&apos;M WORKING ON:
-            </h2>
-            <ul className="pl-6 list-disc space-y-2">
-              {safeArray(profileData.projects).map((project, index) => (
-                <li key={index}>
-                  <a 
-                    href={project.url || project.githubUrl || '#'} 
-                    className="text-blue-600 underline hover:no-underline"
-                  >
-                    {safeString(project.name).toLowerCase()}
-                  </a>
-                  {' '}- {safeString(project.description).toLowerCase()}
-                  {safeArray(project.technologies).length > 0 && (
-                    <span>
-                      {' '}built with {safeArray(project.technologies).map((tech, techIndex) => (
-                        <span key={techIndex}>
-                          <a href="#" className="text-blue-600 underline hover:no-underline">
-                            {safeString(tech).toLowerCase()}
-                          </a>
-                          {techIndex < safeArray(project.technologies).length - 1 ? ', ' : ''}
-                        </span>
-                      ))}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
+            </div>
           </section>
         )}
 
         {/* Skills Section */}
         {safeArray(profileData.skills).length > 0 && (
-          <section className="mt-8">
-            <h2 className="text-[13px] font-bold uppercase mb-4">
-              SKILLS:
-            </h2>
-            <ul className="pl-6 list-disc space-y-1">
+          <section className="mb-8">
+            <h2 className="text-lg font-bold text-black mb-4">Skills</h2>
+            <div className="flex flex-wrap gap-2">
               {safeArray(profileData.skills).map((skill, index) => (
-                <li key={index}>
-                  <a href="#" className="text-blue-600 underline hover:no-underline">
-                    {safeString(skill).toLowerCase()}
-                  </a>
-                </li>
+                <span 
+                  key={index} 
+                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium"
+                >
+                  {safeString(skill)}
+                </span>
               ))}
-            </ul>
+            </div>
           </section>
         )}
-
-        {/* TL;DR Section */}
-        <section className="mt-12">
-          <h2 className="text-[15px] font-bold mb-2">
-            TL;DR:
-          </h2>
-        </section>
 
       </main>
     </div>
