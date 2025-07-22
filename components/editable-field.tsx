@@ -13,9 +13,10 @@ interface EditableFieldProps {
   className?: string
   placeholder?: string
   showEditIcon?: boolean
+  editIconPosition?: string
 }
 
-export function EditableField({ value, onSave, multiline = false, className = "", placeholder, showEditIcon = true }: EditableFieldProps) {
+export function EditableField({ value, onSave, multiline = false, className = "", placeholder, showEditIcon = true, editIconPosition = "-right-8" }: EditableFieldProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(value)
 
@@ -68,7 +69,7 @@ export function EditableField({ value, onSave, multiline = false, className = ""
         <Button
           size="sm"
           variant="minimal"
-          className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm hover:shadow-md p-1"
+          className={`absolute ${editIconPosition} top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-sm hover:shadow-md p-1`}
           onClick={() => setIsEditing(true)}
         >
           <Edit2 className="w-3 h-3" />

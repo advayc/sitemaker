@@ -3,6 +3,7 @@
 import { useState } from "react"
 import type { ProfileData, Experience } from "@/types/profile"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { EditableField } from "@/components/editable-field"
 import { generateWebsiteHTML } from "@/lib/html-generator"
 
@@ -18,6 +19,10 @@ interface ModernPortfolioProps {
 
 export function ModernPortfolio({ profileData: initialData, onEdit }: ModernPortfolioProps) {
   const [profileData, setProfileData] = useState(initialData)
+  const [isAddingSkill, setIsAddingSkill] = useState(false)
+  const [newSkillInput, setNewSkillInput] = useState("")
+  const [editingSkillIndex, setEditingSkillIndex] = useState<number | null>(null)
+  const [editingSkillValue, setEditingSkillValue] = useState("")
   
   const safeArray = <T,>(val: T[] | undefined | null): T[] => (Array.isArray(val) ? val : [])
   const safeString = (val: any): string => {
@@ -84,6 +89,51 @@ export function ModernPortfolio({ profileData: initialData, onEdit }: ModernPort
       ...prev,
       socialLinks: safeArray(prev.socialLinks).map((social, i) => (i === index ? { ...social, [field]: value } : social)),
     }))
+  }
+
+  // Skill management functions
+  const addSkill = () => {
+    if (newSkillInput.trim()) {
+      setProfileData(prev => ({
+        ...prev,
+        skills: [...safeArray(prev.skills), newSkillInput.trim()]
+      }));
+      setNewSkillInput("");
+      setIsAddingSkill(false);
+    }
+  }
+
+  const startEditingSkill = (index: number, currentValue: string) => {
+    setEditingSkillIndex(index);
+    setEditingSkillValue(currentValue);
+  }
+
+  const saveEditingSkill = () => {
+    if (editingSkillIndex !== null) {
+      if (editingSkillValue.trim()) {
+        updateSkill(editingSkillIndex, editingSkillValue.trim());
+      } else {
+        // Remove skill if empty
+        setProfileData(prev => ({
+          ...prev,
+          skills: safeArray(prev.skills).filter((_, i) => i !== editingSkillIndex)
+        }));
+      }
+      setEditingSkillIndex(null);
+      setEditingSkillValue("");
+    }
+  }
+
+  const cancelEditingSkill = () => {
+    setEditingSkillIndex(null);
+    setEditingSkillValue("");
+  }
+
+  const removeSkill = (index: number) => {
+    setProfileData(prev => ({
+      ...prev,
+      skills: safeArray(prev.skills).filter((_, i) => i !== index)
+    }));
   }
 
   // Download HTML functionality
@@ -216,17 +266,21 @@ export function ModernPortfolio({ profileData: initialData, onEdit }: ModernPort
                 <div key={index} className="space-y-2">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <EditableField
-                        value={safeString(exp.position)}
-                        onSave={(value) => updateExperience(index, "position", value)}
-                        className="font-semibold text-black text-base"
-                        placeholder="Job Title"
-                      />
+                      <div className="relative">
+                        <EditableField
+                          value={safeString(exp.position)}
+                          onSave={(value) => updateExperience(index, "position", value)}
+                          className="font-semibold text-black text-base pr-8"
+                          placeholder="Job Title"
+                          editIconPosition="right-0"
+                        />
+                      </div>
                       <div className="flex items-center gap-2 text-gray-600">
                         <EditableField
                           value={safeString(exp.company)}
                           onSave={(value) => updateExperience(index, "company", value)}
                           className=""
+                          editIconPosition="-right-40"
                           placeholder="Company Name"
                         />
                         <span>•</span>
@@ -308,32 +362,114 @@ export function ModernPortfolio({ profileData: initialData, onEdit }: ModernPort
         )}
 
         {/* Skills Section */}
-        {safeArray(profileData.skills).length > 0 && (
-          <section className="mb-8 group relative">
-            <h2 className="text-xl font-bold text-black mb-4">Skills</h2>
-            <Button
-              variant="minimal"
-              size="sm"
-              className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={() => {
-                // Container-level editing for skills section
-                alert("Edit Skills section")
-              }}
-            >
-              <span className="text-xs">Edit</span>
-            </Button>
+        <section className="mb-8 group relative">
+          <h2 className="text-xl font-bold text-black mb-4">Skills</h2>
+          <Button
+            variant="minimal"
+            size="sm"
+            className="absolute -right-2 top-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => setIsAddingSkill(true)}
+          >
+            <span className="text-xs">Add</span>
+          </Button>
+          
+          {/* Add new skill input */}
+          {isAddingSkill && (
+            <div className="mb-4 flex gap-2 items-center">
+              <Input
+                value={newSkillInput}
+                onChange={(e) => setNewSkillInput(e.target.value)}
+                placeholder="Enter a new skill"
+                className="flex-1"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') addSkill();
+                  if (e.key === 'Escape') {
+                    setIsAddingSkill(false);
+                    setNewSkillInput("");
+                  }
+                }}
+              />
+              <Button
+                variant="minimal"
+                size="sm"
+                onClick={addSkill}
+                disabled={!newSkillInput.trim()}
+              >
+                Add
+              </Button>
+              <Button
+                variant="minimal"
+                size="sm"
+                onClick={() => {
+                  setIsAddingSkill(false);
+                  setNewSkillInput("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
+
+          {safeArray(profileData.skills).length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {safeArray(profileData.skills).map((skill, index) => (
-                <span 
-                  key={index} 
-                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium"
-                >
-                  {safeString(skill)}
-                </span>
+                <div key={index} className="relative group">
+                  {editingSkillIndex === index ? (
+                    <div className="flex gap-1 items-center">
+                      <Input
+                        value={editingSkillValue}
+                        onChange={(e) => setEditingSkillValue(e.target.value)}
+                        className="w-24 h-8 text-sm"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveEditingSkill();
+                          if (e.key === 'Escape') cancelEditingSkill();
+                        }}
+                      />
+                      <Button
+                        variant="minimal"
+                        size="sm"
+                        onClick={saveEditingSkill}
+                        className="h-6 w-6 p-0"
+                      >
+                        ✓
+                      </Button>
+                      <Button
+                        variant="minimal"
+                        size="sm"
+                        onClick={cancelEditingSkill}
+                        className="h-6 w-6 p-0"
+                      >
+                        ✕
+                      </Button>
+                    </div>
+                  ) : (
+                    <span 
+                      className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm font-medium hover:bg-gray-200 cursor-pointer inline-block"
+                      onClick={() => startEditingSkill(index, safeString(skill))}
+                    >
+                      {safeString(skill)}
+                      <Button
+                        variant="minimal"
+                        size="sm"
+                        className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-red-100 hover:bg-red-200 text-red-600 w-4 h-4 p-0 rounded-full"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeSkill(index);
+                        }}
+                      >
+                        ×
+                      </Button>
+                    </span>
+                  )}
+                </div>
               ))}
             </div>
-          </section>
-        )}
+          ) : (
+            <p className="text-gray-500 italic">No skills added yet. Click "Add" to add your first skill.</p>
+          )}
+        </section>
 
         {/* Projects Section */}
         {safeArray(profileData.projects).length > 0 && (
