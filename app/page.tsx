@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { UploadArea } from "@/components/upload-area"
 import { ModernPortfolio } from "@/components/modern-portfolio"
-import { parseFile, parseLinkedInUrl } from "@/lib/file-parser"
+import { parseFile } from "@/lib/file-parser"
 import type { ProfileData } from "@/types/profile"
 
 export default function Home() {
@@ -53,32 +53,6 @@ export default function Home() {
     }
   }
 
-  const handleLinkedInUpload = async (url: string) => {
-    setIsUploading(true)
-    setError(null)
-
-    const progressInterval = simulateProgress()
-
-    try {
-      const data = await parseLinkedInUrl(url)
-      setProfileData(data)
-      setUploadProgress(100)
-
-      setTimeout(() => {
-        setCurrentStep("preview")
-        setIsUploading(false)
-        setUploadProgress(0)
-        clearInterval(progressInterval)
-      }, 500)
-    } catch (error) {
-      console.error("Error parsing LinkedIn URL:", error)
-      setError(error instanceof Error ? error.message : "Failed to parse LinkedIn profile")
-      setIsUploading(false)
-      setUploadProgress(0)
-      clearInterval(progressInterval)
-    }
-  }
-
   const handleEdit = () => {
     setCurrentStep("upload")
     setProfileData(null)
@@ -93,8 +67,7 @@ export default function Home() {
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Create Your Personal Website</h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Upload your LinkedIn profile export, resume, or provide your LinkedIn URL to instantly generate a modern,
-              professional website that showcases your experience and skills.
+              Upload your resume or CV to instantly generate a modern, professional website that showcases your experience and skills.
             </p>
           </div>
 
@@ -108,7 +81,6 @@ export default function Home() {
           {/* Upload Area */}
           <UploadArea
             onFileUpload={handleFileUpload}
-            onLinkedInUpload={handleLinkedInUpload}
             isUploading={isUploading}
             uploadProgress={uploadProgress}
           />

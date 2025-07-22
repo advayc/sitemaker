@@ -63,12 +63,3 @@ export async function parseFile(file: File): Promise<ProfileData> {
     throw new Error(`Failed to parse file: ${error instanceof Error ? error.message : "Unknown error"}`)
   }
 }
-
-export async function parseLinkedInUrl(url: string): Promise<ProfileData> {
-  if (!url.includes("linkedin.com")) {
-    throw new Error("Please provide a valid LinkedIn profile URL")
-  }
-
-  const { parseLinkedInProfile } = await import("./ai-parser")
-  return await parseLinkedInProfile(url)
-}

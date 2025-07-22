@@ -15,7 +15,7 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         }
         
         body {
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
             line-height: 1.6;
             color: #374151;
             background-color: #ffffff;
@@ -344,9 +344,14 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
             <div class="top-nav">
                 <div class="nav-links">
                     ${data.email ? `<a href="mailto:${data.email}" class="nav-link">CONTACT</a>` : ''}
-                    ${data.socialLinks.map(social => 
-                        `<a href="${social.url}" target="_blank" rel="noopener noreferrer" class="nav-link">${social.platform.toUpperCase()}</a>`
-                    ).join('')}
+                    ${data.socialLinks.map(social => {
+                        let url = social.url;
+                        // Fix URL if it doesn't start with http/https
+                        if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+                            url = 'https://' + url;
+                        }
+                        return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="nav-link">${social.platform.toUpperCase()}</a>`;
+                    }).join('')}
                 </div>
             </div>
 
@@ -361,7 +366,7 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
             <section class="section">
                 <h2 class="section-title">About</h2>
                 <div class="section-content">
-                    <p>${data.summary}</p>
+                    <p>${data.summary || 'Professional with experience in technology and innovation. Passionate about creating impactful solutions and driving results.'}</p>
                 </div>
             </section>
 
@@ -401,9 +406,9 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
                     <div class="education-item">
                         <div class="education-content">
                             <h3>${edu.institution}</h3>
-                            <p>${edu.degree} in ${edu.field}</p>
+                            <p>${edu.degree}${edu.field ? ` in ${edu.field}` : ''}</p>
                         </div>
-                        <span class="education-period">${edu.startDate} - ${edu.endDate}</span>
+                        <span class="education-period">${edu.startDate}${edu.endDate ? ` - ${edu.endDate}` : ''}</span>
                     </div>
                     `).join('')}
                 </div>
@@ -425,8 +430,8 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
                         </div>
                         ` : ''}
                         <div class="project-links">
-                            ${project.url ? `<a href="${project.url}" target="_blank" class="project-link">Live Demo</a>` : ''}
                             ${project.githubUrl ? `<a href="${project.githubUrl}" target="_blank" class="project-link">GitHub</a>` : ''}
+                            ${project.url ? `<a href="${project.url}" target="_blank" class="project-link">Website</a>` : ''}
                         </div>
                     </div>
                     `).join('')}

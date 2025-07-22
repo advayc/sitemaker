@@ -49,7 +49,7 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
       {/* Header */}
       <header className="border-b border-gray-200 bg-white sticky top-0 z-10">
         <div className="px-6 py-4 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-900">{safeString(profileData.name)}</h1>
+          <h1 className="text-xl font-semibold text-gray-900">{safeString(profileData.name)}</h1>
           <div className="flex items-center gap-3">
             <Button variant="minimal" size="sm" onClick={onEdit}>
               Back to Upload
@@ -75,27 +75,40 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
                 CONTACT
               </a>
             )}
-            {safeArray(profileData.socialLinks).map((social, index) => (
-              <a
-                key={index}
-                href={safeString(social.url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline font-normal hover:no-underline"
-              >
-                {safeString(social.platform).toUpperCase()}
-              </a>
-            ))}
-            {githubLink && (
-              <a
-                href={safeString(githubLink.url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline font-normal hover:no-underline"
-              >
-                GITHUB
-              </a>
-            )}
+            {safeArray(profileData.socialLinks).map((social, index) => {
+              let url = safeString(social.url)
+              // Fix URL if it doesn't start with http/https
+              if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url
+              }
+              return (
+                <a
+                  key={index}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline font-normal hover:no-underline"
+                >
+                  {safeString(social.platform).toUpperCase()}
+                </a>
+              )
+            })}
+            {githubLink && (() => {
+              let url = safeString(githubLink.url)
+              if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+                url = 'https://' + url
+              }
+              return (
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 underline font-normal hover:no-underline"
+                >
+                  GITHUB
+                </a>
+              )
+            })()}
           </div>
         </div>
 
@@ -105,10 +118,6 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
             {safeString(profileData.name)}
           </h1>
           
-          <p className="text-gray-600 mb-4 leading-relaxed">
-            {safeString(profileData.summary)}
-          </p>
-
           {profileData.location && (
             <p className="text-gray-600 mb-4">
               📍 {safeString(profileData.location)}
@@ -118,7 +127,7 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
 
         {/* About Section */}
         <section className="mb-8">
-          <h2 className="text-lg font-bold text-black mb-4">About</h2>
+          <h2 className="text-xl font-bold text-black mb-4">About</h2>
           <p className="text-gray-600 leading-relaxed">
             {safeString(profileData.summary)}
           </p>
@@ -127,7 +136,7 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
         {/* Work Experience Section */}
         {safeArray(profileData.experience).length > 0 && (
           <section className="mb-8">
-            <h2 className="text-lg font-bold text-black mb-4">Work Experience</h2>
+            <h2 className="text-xl font-bold text-black mb-4">Work Experience</h2>
             <div className="space-y-6">
               {safeArray(profileData.experience).map((exp, index) => (
                 <div key={index} className="space-y-2">
@@ -162,7 +171,7 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
         {/* Education Section */}
         {safeArray(profileData.education).length > 0 && (
           <section className="mb-8">
-            <h2 className="text-lg font-bold text-black mb-4">Education</h2>
+            <h2 className="text-xl font-bold text-black mb-4">Education</h2>
             <div className="space-y-4">
               {safeArray(profileData.education).map((edu, index) => (
                 <div key={index} className="flex justify-between items-start">
@@ -186,7 +195,7 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
         {/* Skills Section */}
         {safeArray(profileData.skills).length > 0 && (
           <section className="mb-8">
-            <h2 className="text-lg font-bold text-black mb-4">Skills</h2>
+            <h2 className="text-xl font-bold text-black mb-4">Skills</h2>
             <div className="flex flex-wrap gap-2">
               {safeArray(profileData.skills).map((skill, index) => (
                 <span 
@@ -203,7 +212,7 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
         {/* Projects Section */}
         {safeArray(profileData.projects).length > 0 && (
           <section className="mb-8">
-            <h2 className="text-lg font-bold text-black mb-4">Projects</h2>
+            <h2 className="text-xl font-bold text-black mb-4">Projects</h2>
             <div className="space-y-6">
               {safeArray(profileData.projects).map((project, index) => (
                 <div key={index} className="space-y-2">
@@ -232,16 +241,6 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
                       
                       {/* Project Links */}
                       <div className="flex gap-4 text-sm">
-                        {project.url && (
-                          <a 
-                            href={safeString(project.url)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 underline font-normal hover:no-underline"
-                          >
-                            Live Demo
-                          </a>
-                        )}
                         {project.githubUrl && (
                           <a 
                             href={safeString(project.githubUrl)}
@@ -250,6 +249,16 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
                             className="text-blue-600 underline font-normal hover:no-underline"
                           >
                             GitHub
+                          </a>
+                        )}
+                        {project.url && (
+                          <a 
+                            href={safeString(project.url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline font-normal hover:no-underline"
+                          >
+                            Website
                           </a>
                         )}
                       </div>

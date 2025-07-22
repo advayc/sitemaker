@@ -100,9 +100,11 @@ Important guidelines:
 - If current position, use "Present" for endDate
 - Infer company/institution URLs when possible (e.g., microsoft.com for Microsoft)
 - Extract skills as simple strings, not objects
-- Create a professional summary if one isn't explicitly provided
-- For social links, extract LinkedIn, GitHub, Twitter, personal websites, etc.
+- Create a professional summary that is EXACTLY 2 sentences: first sentence about current role/expertise, second sentence about goals/impact
+- For social links, extract LinkedIn, GitHub, Twitter, personal websites, etc. - ensure URLs are complete and properly formatted
 - Return only valid JSON, no markdown formatting
+
+IMPORTANT: The summary field must be exactly 2 concise sentences that sound professional and engaging.
 
 Content to parse:
 ${content}
@@ -236,6 +238,8 @@ IMPORTANT:
 - Make sure the JSON is valid and complete.
 - For dates, use "Month Year" format (e.g., "Jan 2023")
 - If current position, use "Present" for endDate
+- The summary field must be exactly 2 concise sentences: first sentence about current role/expertise, second sentence about goals/impact
+- For social links, ensure URLs are complete and properly formatted (include https:// if missing)
 
 Please extract all information accurately from the file.
 `
