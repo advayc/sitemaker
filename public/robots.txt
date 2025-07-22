@@ -1,0 +1,9 @@
+# Robots.txt for SiteMaker
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: /sitemap.xml
+
+# Crawl-delay for respectful crawling
+Crawl-delay: 1
