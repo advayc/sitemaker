@@ -41,6 +41,11 @@ export function UploadArea({ onFileUpload, onLinkedInUpload, isUploading, upload
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
       "application/msword": [".doc"],
       "text/plain": [".txt"],
+      "image/jpeg": [".jpg", ".jpeg"],
+      "image/png": [".png"],
+      "image/gif": [".gif"],
+      "image/webp": [".webp"],
+      "image/bmp": [".bmp"],
     },
     multiple: false,
     onDragEnter: () => setDragActive(true),
@@ -133,6 +138,10 @@ export function UploadArea({ onFileUpload, onLinkedInUpload, isUploading, upload
                   <FileText className="w-4 h-4" />
                   DOCX
                 </span>
+                <span className="flex items-center gap-1">
+                  <FileText className="w-4 h-4" />
+                  Images
+                </span>
               </div>
 
               <Button variant="default" size="lg" className="mt-4">
@@ -184,7 +193,7 @@ export function UploadArea({ onFileUpload, onLinkedInUpload, isUploading, upload
       <div className="mt-6 text-center text-sm text-gray-500">
         <p>
           {uploadMode === "file"
-            ? "Supported formats: LinkedIn JSON/XML export, PDF resume, DOCX resume"
+            ? "Supported formats: LinkedIn JSON/XML export, PDF resume, DOCX resume, Images (JPG, PNG)"
             : "We'll analyze your public LinkedIn profile information"}
         </p>
         <p className="mt-1">Your data is processed securely and never stored permanently</p>

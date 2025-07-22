@@ -3,6 +3,7 @@
 import { useState } from "react"
 import type { ProfileData } from "@/types/profile"
 import { Button } from "@/components/ui/button"
+import { generateWebsiteHTML } from "@/lib/html-generator"
 
 interface ModernPortfolioProps {
   profileData: ProfileData
@@ -17,6 +18,25 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
       return val.name || val.title || val.value || JSON.stringify(val)
     }
     return String(val || "")
+  }
+
+  // Download HTML functionality
+  const handleDownloadHTML = () => {
+    try {
+      const htmlContent = generateWebsiteHTML(profileData)
+      const blob = new Blob([htmlContent], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${profileData.name.replace(/[^a-zA-Z0-9]/g, '_')}_portfolio.html`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error('Error downloading HTML:', error)
+      alert('Error generating HTML file. Please try again.')
+    }
   }
 
   // Get GitHub URL from social links
@@ -34,7 +54,7 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
             <Button variant="minimal" size="sm" onClick={onEdit}>
               Back to Upload
             </Button>
-            <Button variant="silver" size="sm">
+            <Button variant="silver" size="sm" onClick={handleDownloadHTML}>
               Download HTML
             </Button>
           </div>
@@ -175,6 +195,67 @@ export function ModernPortfolio({ profileData, onEdit }: ModernPortfolioProps) {
                 >
                   {safeString(skill)}
                 </span>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Projects Section */}
+        {safeArray(profileData.projects).length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-lg font-bold text-black mb-4">Projects</h2>
+            <div className="space-y-6">
+              {safeArray(profileData.projects).map((project, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-black text-base">
+                        {safeString(project.name)}
+                      </h3>
+                      <p className="text-gray-600 leading-relaxed mb-2">
+                        {safeString(project.description)}
+                      </p>
+                      
+                      {/* Technologies */}
+                      {safeArray(project.technologies).length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {safeArray(project.technologies).map((tech, techIndex) => (
+                            <span 
+                              key={techIndex}
+                              className="px-2 py-0.5 bg-gray-50 text-gray-600 rounded text-xs font-medium border"
+                            >
+                              {safeString(tech)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Project Links */}
+                      <div className="flex gap-4 text-sm">
+                        {project.url && (
+                          <a 
+                            href={safeString(project.url)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline font-normal hover:no-underline"
+                          >
+                            Live Demo
+                          </a>
+                        )}
+                        {project.githubUrl && (
+                          <a 
+                            href={safeString(project.githubUrl)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 underline font-normal hover:no-underline"
+                          >
+                            GitHub
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </section>

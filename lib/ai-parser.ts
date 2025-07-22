@@ -1,7 +1,7 @@
 import type { ProfileData } from "@/types/profile"
 
 // Try environment variable first, then fallback to the provided key
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "AIzaSyBJMu49qe77HlR5H1TGqze5szx6MFQYoXY"
+const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
 /**
@@ -158,6 +158,151 @@ ${content}
     education: Array.isArray(parsed.education) ? parsed.education : [],
     skills: Array.isArray(parsed.skills)
       ? parsed.skills.map((skill: any) =>
+          typeof skill === "string" ? skill : skill.name || skill.skill || String(skill),
+        )
+      : [],
+    projects: Array.isArray(parsed.projects)
+      ? parsed.projects.map((project: any) => ({
+          ...project,
+          technologies: Array.isArray(project.technologies) ? project.technologies : [],
+        }))
+      : [],
+    socialLinks: Array.isArray(parsed.socialLinks) ? parsed.socialLinks : [],
+  }
+
+  return normalized as ProfileData
+}
+
+export async function parseWithAIFromFile(base64Data: string, mimeType: string, fileType: string): Promise<ProfileData> {
+  // Debug API key (don't log full key in production)
+  console.log("Using API key:", GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 10)}...` : "NOT SET")
+  
+  if (!GEMINI_API_KEY || GEMINI_API_KEY === "your-actual-api-key-here") {
+    throw new Error("Gemini API key is not configured. Please set NEXT_PUBLIC_GEMINI_API_KEY in .env.local")
+  }
+
+  const prompt = `
+Analyze this ${fileType} and extract the following information in JSON format. Be thorough and accurate:
+
+{
+  "name": "Full name of the person",
+  "title": "Professional title or desired position",
+  "email": "email address if found",
+  "phone": "phone number if found",
+  "location": "City, State/Province/Country",
+  "summary": "Brief professional summary (2-3 sentences)",
+  "experience": [
+    {
+      "company": "Company Name",
+      "position": "Job Title",
+      "startDate": "Month Year",
+      "endDate": "Month Year or Present",
+      "description": "Detailed description of responsibilities and achievements",
+      "companyUrl": "company website if can be inferred"
+    }
+  ],
+  "education": [
+    {
+      "institution": "School/University name",
+      "degree": "Degree Type",
+      "field": "Field of study",
+      "startDate": "Month Year",
+      "endDate": "Month Year",
+      "institutionUrl": "school website if can be inferred"
+    }
+  ],
+  "skills": ["skill1", "skill2", "skill3"],
+  "projects": [
+    {
+      "name": "Project Name",
+      "description": "Project description",
+      "technologies": ["tech1", "tech2"],
+      "url": "project url if available",
+      "githubUrl": "github url if available"
+    }
+  ],
+  "socialLinks": [
+    {
+      "platform": "Platform Name",
+      "url": "profile url",
+      "username": "username"
+    }
+  ]
+}
+
+IMPORTANT: 
+- Limit the skills array to a maximum of 10 skills. Choose the most relevant and important skills.
+- Extract all information accurately from the resume. If some information is not available, use reasonable defaults or leave empty.
+- Make sure the JSON is valid and complete.
+- For dates, use "Month Year" format (e.g., "Jan 2023")
+- If current position, use "Present" for endDate
+
+Please extract all information accurately from the file.
+`
+
+  const requestBody = {
+    contents: [
+      {
+        parts: [
+          {
+            text: prompt
+          },
+          {
+            inline_data: {
+              mime_type: mimeType,
+              data: base64Data
+            }
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.1,
+      topK: 1,
+      topP: 1,
+      maxOutputTokens: 2048,
+    }
+  }
+
+  const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestBody),
+  })
+
+  if (!res.ok) {
+    const errorText = await res.text()
+    throw new Error(`Gemini AI request failed: ${res.status} ${res.statusText} - ${errorText}`)
+  }
+
+  const data = await res.json()
+  
+  if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+    throw new Error('Invalid response from Gemini API')
+  }
+
+  const responseContent = data.candidates[0].content.parts[0].text
+
+  if (!responseContent) {
+    throw new Error("Empty response from AI")
+  }
+
+  const parsed = extractJson(responseContent)
+
+  // Normalize the data to ensure arrays are properly formatted and match ProfileData interface
+  const normalized = {
+    name: parsed.name || "Unknown",
+    title: parsed.title || "",
+    email: parsed.email || "",
+    phone: parsed.phone || "",
+    location: parsed.location || "",
+    summary: parsed.summary || "",
+    experience: Array.isArray(parsed.experience) ? parsed.experience : [],
+    education: Array.isArray(parsed.education) ? parsed.education : [],
+    skills: Array.isArray(parsed.skills)
+      ? parsed.skills.slice(0, 10).map((skill: any) =>
           typeof skill === "string" ? skill : skill.name || skill.skill || String(skill),
         )
       : [],
