@@ -258,9 +258,9 @@ export function ModernPortfolio({ profileData: initialData, onEdit }: ModernPort
         </section>
 
         {/* Work Experience Section */}
-        {safeArray(profileData.experience).length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-xl font-bold text-black mb-4">Work Experience</h2>
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-black mb-4">Work Experience</h2>
+          {safeArray(profileData.experience).length > 0 ? (
             <div className="space-y-6">
               {safeArray(profileData.experience).map((exp, index) => (
                 <div key={index} className="space-y-2">
@@ -312,13 +312,15 @@ export function ModernPortfolio({ profileData: initialData, onEdit }: ModernPort
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          ) : (
+            <p className="text-gray-500 italic">No work experience added yet.</p>
+          )}
+        </section>
 
         {/* Education Section */}
-        {safeArray(profileData.education).length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-xl font-bold text-black mb-4">Education</h2>
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-black mb-4">Education</h2>
+          {safeArray(profileData.education).length > 0 ? (
             <div className="space-y-4">
               {safeArray(profileData.education).map((edu, index) => (
                 <div key={index} className="flex justify-between items-start">
@@ -358,8 +360,10 @@ export function ModernPortfolio({ profileData: initialData, onEdit }: ModernPort
                 </div>
               ))}
             </div>
-          </section>
-        )}
+          ) : (
+            <p className="text-gray-500 italic">No education added yet.</p>
+          )}
+        </section>
 
         {/* Skills Section */}
         <section className="mb-8 group relative">
