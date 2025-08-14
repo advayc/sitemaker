@@ -10,6 +10,21 @@ export interface ProfileData {
   skills: string[]
   projects: Project[]
   socialLinks: SocialLink[]
+  languages?: Language[]
+  certifications?: Certification[]
+  achievements?: string[]
+}
+
+export interface Language {
+  name: string
+  proficiency: string
+}
+
+export interface Certification {
+  name: string
+  issuer: string
+  date: string
+  url?: string
 }
 
 export interface Experience {

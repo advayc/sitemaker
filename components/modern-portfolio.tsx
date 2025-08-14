@@ -549,6 +549,66 @@ export function ModernPortfolio({ profileData: initialData, onEdit }: ModernPort
           </section>
         )}
 
+        {/* Languages Section */}
+        {profileData.languages && safeArray(profileData.languages).length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-xl font-bold text-black mb-4">Languages</h2>
+            <div className="space-y-2">
+              {safeArray(profileData.languages).map((language, index) => (
+                <div key={index} className="flex justify-between items-center">
+                  <span className="font-medium text-gray-900">{safeString(language.name)}</span>
+                  <span className="text-gray-600">{safeString(language.proficiency)}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Certifications Section */}
+        {profileData.certifications && safeArray(profileData.certifications).length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-xl font-bold text-black mb-4">Certifications</h2>
+            <div className="space-y-4">
+              {safeArray(profileData.certifications).map((cert, index) => (
+                <div key={index} className="space-y-1">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-black">{safeString(cert.name)}</h3>
+                      <p className="text-gray-600">{safeString(cert.issuer)}</p>
+                    </div>
+                    <span className="text-gray-600 ml-4">{safeString(cert.date)}</span>
+                  </div>
+                  {cert.url && (
+                    <a 
+                      href={safeString(cert.url)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 underline text-sm hover:no-underline"
+                    >
+                      View Certificate
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Achievements Section */}
+        {profileData.achievements && safeArray(profileData.achievements).length > 0 && (
+          <section className="mb-8">
+            <h2 className="text-xl font-bold text-black mb-4">Achievements</h2>
+            <ul className="space-y-2">
+              {safeArray(profileData.achievements).map((achievement, index) => (
+                <li key={index} className="flex items-start">
+                  <span className="text-cyan-600 mr-2 mt-1">•</span>
+                  <span className="text-gray-700">{safeString(achievement)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
       </main>
     </div>
   )

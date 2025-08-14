@@ -47,6 +47,16 @@ export function UploadArea({ onFileUpload, isUploading, uploadProgress }: Upload
     disabled: isUploading,
   })
 
+  const handleLinkedInSubmit = () => {
+    if (linkedInUrl.trim() && !isUploading) {
+      onLinkedInSubmit(linkedInUrl.trim())
+    }
+  }
+
+  const validateLinkedInUrl = (url: string) => {
+    return url.includes('linkedin.com/in/') || url.includes('linkedin.com/pub/')
+  }
+
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div
