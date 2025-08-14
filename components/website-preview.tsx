@@ -5,7 +5,7 @@ import type { ProfileData, Experience } from "@/types/profile"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { EditableField } from "@/components/editable-field"
-import { ExternalLink, Github, Linkedin, Twitter, Globe, Mail, Phone, MapPin } from "lucide-react"
+import { ExternalLink, Github, Twitter, Globe, Mail, Phone, MapPin } from "lucide-react"
 
 interface WebsitePreviewProps {
   profileData: ProfileData
@@ -38,8 +38,6 @@ export function WebsitePreview({ profileData: initialData, onEdit }: WebsitePrev
 
   const getSocialIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
-      case "linkedin":
-        return <Linkedin className="w-4 h-4" />
       case "github":
         return <Github className="w-4 h-4" />
       case "twitter":

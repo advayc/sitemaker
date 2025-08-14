@@ -47,15 +47,6 @@ export function UploadArea({ onFileUpload, isUploading, uploadProgress }: Upload
     disabled: isUploading,
   })
 
-  const handleLinkedInSubmit = () => {
-    if (linkedInUrl.trim() && !isUploading) {
-      onLinkedInSubmit(linkedInUrl.trim())
-    }
-  }
-
-  const validateLinkedInUrl = (url: string) => {
-    return url.includes('linkedin.com/in/') || url.includes('linkedin.com/pub/')
-  }
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -120,7 +111,7 @@ export function UploadArea({ onFileUpload, isUploading, uploadProgress }: Upload
       </div>
 
       <div className="mt-6 text-center text-sm text-gray-500">
-        <p>Supported formats: PDF resume, DOCX resume, Images (JPG, PNG), LinkedIn JSON/XML export</p>
+  <p>Supported formats: PDF resume, DOCX resume, Images (JPG, PNG), JSON/XML export</p>
         <p className="mt-1">Your data is processed securely and never stored permanently</p>
       </div>
     </div>

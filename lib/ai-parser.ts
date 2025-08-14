@@ -87,7 +87,7 @@ You are an expert at parsing professional profiles and resumes. Extract the foll
   ],
   "socialLinks": [
     {
-      "platform": "LinkedIn",
+  "platform": "Other",
       "url": "profile url",
       "username": "username"
     }
@@ -116,7 +116,7 @@ Important guidelines:
 - Infer company/institution URLs when possible (e.g., microsoft.com for Microsoft)
 - Extract skills as simple strings, not objects
 - Create a professional summary that is EXACTLY 2 sentences: first sentence about current role/expertise, second sentence about goals/impact
-- For social links, extract LinkedIn, GitHub, Twitter, personal websites, etc. - ensure URLs are complete and properly formatted
+For social links, extract GitHub, Twitter, personal websites, etc. - ensure URLs are complete and properly formatted
 - For languages, include proficiency levels like "Native", "Fluent", "Conversational", "Basic"
 - For certifications, extract any professional certifications mentioned
 - For achievements, extract notable accomplishments, awards, or recognitions

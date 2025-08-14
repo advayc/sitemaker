@@ -25,10 +25,10 @@ export async function parseFile(file: File): Promise<ProfileData> {
     // Handle text-based files
     if (file.type === "application/json") {
       content = await file.text()
-      fileType = "LinkedIn JSON export"
+  fileType = "JSON export"
     } else if (file.type === "application/xml" || file.type === "text/xml") {
       content = await file.text()
-      fileType = "LinkedIn XML export"
+  fileType = "XML export"
     } else if (file.type.startsWith("text/")) {
       content = await file.text()
       fileType = "text file"
