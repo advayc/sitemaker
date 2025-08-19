@@ -36,6 +36,7 @@ export interface Project {
   technologies: string[]
   url?: string
   githubUrl?: string
+  links?: { label: string; url: string }[]
 }
 
 export interface SocialLink {

@@ -4,7 +4,8 @@ import { useState, useCallback } from "react"
 import { useDropzone } from "react-dropzone"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Upload, FileText, Loader2 } from "lucide-react"
+import { Upload, FileText, Loader2, Info } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { cn } from "@/lib/utils"
 
 interface UploadAreaProps {
@@ -107,6 +108,30 @@ export function UploadArea({ onFileUpload, isUploading, uploadProgress }: Upload
             </Button>
           </div>
         )}
+      </div>
+
+      {/* LinkedIn Help */}
+      <div className="mt-4 flex justify-center">
+        <Dialog>
+          <DialogTrigger asChild>
+            <button
+              className="flex items-center gap-2 border rounded-md px-4 py-2 text-sm hover:bg-gray-50 transition shadow-sm group"
+              style={{ cursor: 'help' }}
+              aria-label="How to upload LinkedIn profile"
+            >
+              <Info className="w-4 h-4 text-gray-500 group-hover:text-gray-700" />
+              <span>How to upload LinkedIn</span>
+            </button>
+          </DialogTrigger>
+          <DialogContent className="w-[60%] max-w-3xl sm:max-w-4xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold">Go to your profile → Click on “Resources” → Then “Save to PDF”</DialogTitle>
+            </DialogHeader>
+            <div className="mt-2 flex justify-center">
+              <img src="/linkedin-demo.png" alt="LinkedIn download steps" className="rounded border max-w-full" style={{ width: '100%', maxWidth: 900, height: 'auto' }} />
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="mt-6 text-center text-sm text-gray-500">

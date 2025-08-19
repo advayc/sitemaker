@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { UploadArea } from "@/components/upload-area"
 import { ModernPortfolio } from "@/components/modern-portfolio"
+import { defaultSiteSettings } from "@/types/site-settings"
 import { parseFile } from "@/lib/file-parser"
 import type { ProfileData } from "@/types/profile"
 
@@ -11,6 +12,7 @@ export default function Home() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
+  const [siteSettings, setSiteSettings] = useState(defaultSiteSettings)
   const [error, setError] = useState<string | null>(null)
 
   const simulateProgress = () => {
@@ -36,6 +38,10 @@ export default function Home() {
     try {
       const data = await parseFile(file)
       setProfileData(data)
+      setSiteSettings({ 
+        ...defaultSiteSettings, 
+        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' 
+      })
       setUploadProgress(100)
 
       setTimeout(() => {
@@ -88,7 +94,7 @@ export default function Home() {
         </div>
       ) : (
         <div className="min-h-screen">
-          {profileData && <ModernPortfolio profileData={profileData} onEdit={handleEdit} />}
+          {profileData && <ModernPortfolio profileData={profileData} onEdit={handleEdit} initialSiteSettings={siteSettings} />}
         </div>
       )}
     </div>

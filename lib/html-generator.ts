@@ -1,6 +1,30 @@
 import type { ProfileData } from "@/types/profile"
+import type { SiteSettings } from "@/types/site-settings"
 
-export const generateWebsiteHTML = (data: ProfileData): string => {
+export const generateWebsiteHTML = (data: ProfileData, settings?: Partial<SiteSettings>): string => {
+    const applied = {
+        fontFamily:
+            settings?.fontFamily ||
+            'ui-monospace, SFMono-Regular, Menlo, monospace',
+        theme: settings?.theme || 'light',
+        primaryColor: settings?.primaryColor || '#2563eb',
+        backgroundColor: settings?.backgroundColor || (settings?.theme === 'dark' ? '#0d1117' : '#ffffff'),
+        textColor: settings?.textColor || (settings?.theme === 'dark' ? '#d1d5db' : '#374151'),
+        sectionTitles: {
+            about: settings?.sectionTitles?.about || 'About',
+            experience: settings?.sectionTitles?.experience || 'Work Experience',
+            education: settings?.sectionTitles?.education || 'Education',
+            skills: settings?.sectionTitles?.skills || 'Skills',
+            projects: settings?.sectionTitles?.projects || 'Projects',
+        },
+    }
+    const isDark = applied.theme === 'dark'
+    const surface = isDark ? '#161b22' : '#ffffff'
+    const border = isDark ? '#30363d' : '#e5e7eb'
+    const subtle = isDark ? '#8b949e' : '#6b7280'
+    const heading = isDark ? '#f1f5f9' : '#000000'
+    const tagBg = isDark ? '#1f2937' : '#f3f4f6'
+    const tagBorder = isDark ? '#30363d' : '#e5e7eb'
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,10 +39,10 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         }
         
         body {
-            font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace;
+            font-family: ${applied.fontFamily};
             line-height: 1.6;
             color: #374151;
-            background-color: #ffffff;
+            background-color: ${applied.backgroundColor};
             font-size: 15px;
         }
         
@@ -28,8 +52,8 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         
         /* Header */
         .header {
-            border-bottom: 1px solid #e5e7eb;
-            background-color: #ffffff;
+            border-bottom: 1px solid ${border};
+            background-color: ${surface};
             position: sticky;
             top: 0;
             z-index: 10;
@@ -45,7 +69,7 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         .header-title {
             font-size: 1.125rem;
             font-weight: 600;
-            color: #111827;
+            color: ${heading};
         }
         
         .header-buttons {
@@ -66,23 +90,23 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         }
         
         .btn-minimal {
-            color: #374151;
-            border-color: #d1d5db;
+            color: ${applied.textColor};
+            border-color: ${border};
             background-color: transparent;
         }
         
         .btn-minimal:hover {
-            background-color: #f3f4f6;
+            background-color: ${isDark ? '#1f2937' : '#f3f4f6'};
         }
         
         .btn-silver {
-            color: #374151;
-            background-color: #f9fafb;
-            border-color: #d1d5db;
+            color: ${applied.textColor};
+            background-color: ${isDark ? '#1f2937' : '#f9fafb'};
+            border-color: ${border};
         }
         
         .btn-silver:hover {
-            background-color: #f3f4f6;
+            background-color: ${isDark ? '#243041' : '#f3f4f6'};
         }
         
         /* Main Content */
@@ -108,7 +132,7 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         }
         
         .nav-link {
-            color: #2563eb;
+            color: ${applied.primaryColor};
             text-decoration: underline;
             font-weight: normal;
         }
@@ -126,17 +150,17 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
             font-size: 1.5rem;
             font-weight: 700;
             margin-bottom: 0.5rem;
-            color: #000000;
+            color: ${heading};
         }
         
         .profile-summary {
-            color: #6b7280;
+            color: ${subtle};
             margin-bottom: 1rem;
             line-height: 1.6;
         }
         
         .profile-location {
-            color: #6b7280;
+            color: ${subtle};
             margin-bottom: 1rem;
         }
         
@@ -148,12 +172,12 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         .section-title {
             font-size: 1.125rem;
             font-weight: 700;
-            color: #000000;
+            color: ${heading};
             margin-bottom: 1rem;
         }
         
         .section-content {
-            color: #6b7280;
+            color: ${subtle};
             line-height: 1.6;
         }
         
@@ -171,7 +195,7 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         
         .experience-title {
             font-weight: 600;
-            color: #000000;
+            color: ${heading};
             font-size: 1rem;
             margin-bottom: 0.25rem;
         }
@@ -180,19 +204,19 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            color: #6b7280;
+            color: ${subtle};
             font-size: 0.9rem;
         }
         
         .experience-period {
-            color: #6b7280;
+            color: ${subtle};
             margin-left: 1rem;
             white-space: nowrap;
             text-align: right;
         }
         
         .experience-description {
-            color: #6b7280;
+            color: ${subtle};
             line-height: 1.6;
             margin-top: 0.5rem;
         }
@@ -207,16 +231,16 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         
         .education-content h3 {
             font-weight: 600;
-            color: #000000;
+            color: ${heading};
             margin-bottom: 0.25rem;
         }
         
         .education-content p {
-            color: #6b7280;
+            color: ${subtle};
         }
         
         .education-period {
-            color: #6b7280;
+            color: ${subtle};
             margin-left: 1rem;
             white-space: nowrap;
         }
@@ -228,12 +252,12 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         
         .project-title {
             font-weight: 600;
-            color: #000000;
+            color: ${heading};
             margin-bottom: 0.25rem;
         }
         
         .project-description {
-            color: #6b7280;
+            color: ${subtle};
             margin-bottom: 0.5rem;
             line-height: 1.6;
         }
@@ -247,8 +271,9 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         
         .project-tech-tag {
             padding: 0.125rem 0.5rem;
-            background-color: #e5e7eb;
-            color: #374151;
+            background-color: ${tagBg};
+            color: ${applied.textColor};
+            border: 1px solid ${tagBorder};
             border-radius: 0.25rem;
             font-size: 0.75rem;
             font-weight: 500;
@@ -260,7 +285,7 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         }
         
         .project-link {
-            color: #2563eb;
+            color: ${applied.primaryColor};
             text-decoration: underline;
             font-size: 0.875rem;
         }
@@ -278,8 +303,9 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
         
         .skill-tag {
             padding: 0.25rem 0.75rem;
-            background-color: #f3f4f6;
-            color: #374151;
+            background-color: ${tagBg};
+            color: ${applied.textColor};
+            border: 1px solid ${tagBorder};
             border-radius: 0.375rem;
             font-size: 0.875rem;
             font-weight: 500;
@@ -353,7 +379,7 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
 
             <!-- About Section -->
             <section class="section">
-                <h2 class="section-title">About</h2>
+                <h2 class="section-title">${applied.sectionTitles.about}</h2>
                 <div class="section-content">
                     <p>${data.summary || 'Professional with experience in technology and innovation. Passionate about creating impactful solutions and driving results.'}</p>
                 </div>
@@ -362,7 +388,7 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
             <!-- Work Experience Section -->
             ${data.experience.length > 0 ? `
             <section class="section">
-                <h2 class="section-title">Work Experience</h2>
+                <h2 class="section-title">${applied.sectionTitles.experience}</h2>
                 <div class="section-content">
                     ${data.experience.map(exp => `
                     <div class="experience-item">
@@ -389,7 +415,7 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
             <!-- Education Section -->
             ${data.education.length > 0 ? `
             <section class="section">
-                <h2 class="section-title">Education</h2>
+                <h2 class="section-title">${applied.sectionTitles.education}</h2>
                 <div class="section-content">
                     ${data.education.map(edu => `
                     <div class="education-item">
@@ -407,7 +433,7 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
             <!-- Projects Section -->
             ${data.projects.length > 0 ? `
             <section class="section">
-                <h2 class="section-title">Projects</h2>
+                <h2 class="section-title">${applied.sectionTitles.projects}</h2>
                 <div class="section-content">
                     ${data.projects.map(project => `
                     <div class="project-item">
@@ -431,7 +457,7 @@ export const generateWebsiteHTML = (data: ProfileData): string => {
             <!-- Skills Section -->
             ${data.skills.length > 0 ? `
             <section class="section">
-                <h2 class="section-title">Skills</h2>
+                <h2 class="section-title">${applied.sectionTitles.skills}</h2>
                 <div class="skills-container">
                     ${data.skills.slice(0, 10).map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
                 </div>
