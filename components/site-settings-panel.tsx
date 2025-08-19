@@ -5,7 +5,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
-import { defaultSiteSettings, SiteSettings } from '@/types/site-settings'
+import { defaultSiteSettings, SiteSettings, siteSettingsPresets } from '@/types/site-settings'
 
 interface SiteSettingsPanelProps {
   value: SiteSettings
@@ -41,6 +41,17 @@ export function SiteSettingsPanel({ value, onChange }: SiteSettingsPanelProps) {
     setLocal(prev => ({ ...prev, sectionTitles: { ...prev.sectionTitles, [section]: v } }))
   }
 
+  const applyPreset = (id: string) => {
+    const preset = siteSettingsPresets.find(p => p.id === id)
+    if (!preset) return
+    // merge but keep existing section titles unless preset provides them
+    setLocal(prev => ({
+      ...prev,
+      ...preset.settings,
+      sectionTitles: { ...prev.sectionTitles, ...(preset.settings.sectionTitles || {}) }
+    }) )
+  }
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -54,6 +65,47 @@ export function SiteSettingsPanel({ value, onChange }: SiteSettingsPanelProps) {
           </div>
 
           <div className="space-y-4">
+            {/* Presets */}
+            <div>
+              <label className="block text-xs font-medium mb-2">Presets</label>
+              <div className="grid grid-cols-2 gap-2">
+                {siteSettingsPresets.map(p => {
+                  const selected = (
+                    (p.settings.backgroundColor ? p.settings.backgroundColor === local.backgroundColor : true) &&
+                    (p.settings.textColor ? p.settings.textColor === local.textColor : true) &&
+                    (p.settings.primaryColor ? p.settings.primaryColor === local.primaryColor : true) &&
+                    (p.settings.fontFamily ? p.settings.fontFamily === local.fontFamily : true) &&
+                    (p.settings.theme ? p.settings.theme === local.theme : true)
+                  )
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => applyPreset(p.id)}
+                      className={`relative text-left border rounded-md px-3 py-2 focus:outline-none transition group ${selected ? 'ring-2 ring-blue-500 bg-blue-50/40 dark:bg-blue-500/10 border-blue-300' : 'hover:bg-gray-50 focus:ring-2 focus:ring-blue-500'}`}
+                    >
+                      {selected && (
+                        <span className="absolute top-1 right-1 text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded shadow">✓</span>
+                      )}
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs font-medium capitalize block truncate">{p.name}</span>
+                          {p.description && <p className="mt-0.5 text-[10px] text-gray-500 leading-snug line-clamp-2">{p.description}</p>}
+                        </div>
+                        {/* Thumbnail */}
+                        <div className="shrink-0 w-10 h-10 rounded border overflow-hidden relative ring-1 ring-gray-200">
+                          <div className="absolute inset-0" style={{ background: p.settings.backgroundColor || '#fff' }} />
+                          <div className="absolute top-0 left-0 w-full h-2" style={{ background: p.settings.primaryColor || '#2563eb', opacity: 0.85 }} />
+                          <div className="absolute inset-x-1 top-3 h-1 rounded" style={{ background: p.settings.textColor || '#374151', opacity: 0.35 }} />
+                          <div className="absolute inset-x-1 top-5 h-1 rounded" style={{ background: p.settings.textColor || '#374151', opacity: 0.15 }} />
+                          <div className="absolute inset-x-1 bottom-1 h-2 rounded" style={{ background: p.settings.primaryColor || '#2563eb', opacity: 0.4 }} />
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
             <div>
               <label className="block text-xs font-medium mb-1">Dark Mode</label>
               <div className="flex items-center gap-3">

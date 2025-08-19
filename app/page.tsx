@@ -69,7 +69,6 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       {currentStep === "upload" ? (
         <div className="container mx-auto px-4 py-12">
-          {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-4">Create Your Personal Website</h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -77,20 +76,18 @@ export default function Home() {
             </p>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="max-w-2xl mx-auto mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-700 text-sm">{error}</p>
             </div>
           )}
 
-          {/* Upload Area */}
           <UploadArea
             onFileUpload={handleFileUpload}
             isUploading={isUploading}
             uploadProgress={uploadProgress}
           />
-
+          
         </div>
       ) : (
         <div className="min-h-screen">
