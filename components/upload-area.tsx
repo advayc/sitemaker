@@ -128,7 +128,7 @@ export function UploadArea({ onFileUpload, isUploading, uploadProgress }: Upload
               <DialogTitle className="text-xl font-bold">Go to your profile → Click on “Resources” → Then “Save to PDF”</DialogTitle>
             </DialogHeader>
             <div className="mt-2 flex justify-center">
-              <img src="/linkedin-demo.png" alt="LinkedIn download steps" className="rounded border max-w-full" style={{ width: '100%', maxWidth: 900, height: 'auto' }} />
+              <img src="/linkedin-demo.png" alt="LinkedIn download steps" className="rounded border max-w-full" style={{ width: '80%', maxWidth: 900, height: 'auto' }} />
             </div>
           </DialogContent>
         </Dialog>
@@ -137,6 +137,9 @@ export function UploadArea({ onFileUpload, isUploading, uploadProgress }: Upload
       <div className="mt-6 text-center text-sm text-gray-500">
         <p>Supported formats: PDF resume, DOCX resume, Images (JPG, PNG), LinkedIn JSON/XML export</p>
         <p className="mt-1">Your data is processed securely and never stored permanently</p>
+      </div>
+      <div className="mt-4 text-center text-sm text-gray-700 font-semibold">
+        <p className="mt-1">Built with ❤️ by <a href="https://github.com/advayc/sitemaker" target="_blank" rel="noopener noreferrer" className="underline decoration-dotted text-[#2563eb] hover:text-gray-900">[advayc]</a></p>
       </div>
     </div>
   )
