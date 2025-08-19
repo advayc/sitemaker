@@ -1,11 +1,56 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback, memo, lazy, Suspense } from "react"
 import { UploadArea } from "@/components/upload-area"
-import { ModernPortfolio } from "@/components/modern-portfolio"
 import { defaultSiteSettings } from "@/types/site-settings"
 import { parseFile } from "@/lib/file-parser"
 import type { ProfileData } from "@/types/profile"
+
+// Lazy load the ModernPortfolio component to reduce initial bundle size
+const ModernPortfolio = lazy(() => import("@/components/modern-portfolio").then(module => ({ default: module.ModernPortfolio })))
+
+// Simple loading component
+const PortfolioLoading = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+  </div>
+)
+
+// Memoized component for upload view
+const UploadView = memo(({ 
+  onFileUpload, 
+  isUploading, 
+  uploadProgress, 
+  error 
+}: {
+  onFileUpload: (file: File) => Promise<void>
+  isUploading: boolean
+  uploadProgress: number
+  error: string | null
+}) => (
+  <div className="container mx-auto px-4 py-12">
+    <div className="text-center mb-12">
+      <h1 className="text-4xl font-bold text-gray-900 mb-4">Create Your Personal Website</h1>
+      <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+        Upload your resume or CV to instantly generate a modern, professional website that showcases your experience and skills.
+      </p>
+    </div>
+
+    {error && (
+      <div className="max-w-2xl mx-auto mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-700 text-sm">{error}</p>
+      </div>
+    )}
+
+    <UploadArea
+      onFileUpload={onFileUpload}
+      isUploading={isUploading}
+      uploadProgress={uploadProgress}
+    />
+  </div>
+))
+
+UploadView.displayName = 'UploadView'
 
 export default function Home() {
   const [currentStep, setCurrentStep] = useState<"upload" | "preview">("upload")
@@ -15,7 +60,7 @@ export default function Home() {
   const [siteSettings, setSiteSettings] = useState(defaultSiteSettings)
   const [error, setError] = useState<string | null>(null)
 
-  const simulateProgress = () => {
+  const simulateProgress = useCallback(() => {
     setUploadProgress(0)
     const progressInterval = setInterval(() => {
       setUploadProgress((prev) => {
@@ -27,9 +72,9 @@ export default function Home() {
       })
     }, 300)
     return progressInterval
-  }
+  }, [])
 
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = useCallback(async (file: File) => {
     setIsUploading(true)
     setError(null)
 
@@ -40,7 +85,7 @@ export default function Home() {
       setProfileData(data)
       setSiteSettings({ 
         ...defaultSiteSettings, 
-        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' 
+        fontFamily: 'var(--font-inter)' // Use system font for better performance
       })
       setUploadProgress(100)
 
@@ -57,41 +102,34 @@ export default function Home() {
       setUploadProgress(0)
       clearInterval(progressInterval)
     }
-  }
+  }, [simulateProgress])
 
-  const handleEdit = () => {
+  const handleEdit = useCallback(() => {
     setCurrentStep("upload")
     setProfileData(null)
     setError(null)
-  }
+  }, [])
 
   return (
     <div className="min-h-screen bg-white">
       {currentStep === "upload" ? (
-        <div className="container mx-auto px-4 py-12">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Create Your Personal Website</h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Upload your resume or CV to instantly generate a modern, professional website that showcases your experience and skills.
-            </p>
-          </div>
-
-          {error && (
-            <div className="max-w-2xl mx-auto mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-700 text-sm">{error}</p>
-            </div>
-          )}
-
-          <UploadArea
-            onFileUpload={handleFileUpload}
-            isUploading={isUploading}
-            uploadProgress={uploadProgress}
-          />
-          
-        </div>
+        <UploadView
+          onFileUpload={handleFileUpload}
+          isUploading={isUploading}
+          uploadProgress={uploadProgress}
+          error={error}
+        />
       ) : (
         <div className="min-h-screen">
-          {profileData && <ModernPortfolio profileData={profileData} onEdit={handleEdit} initialSiteSettings={siteSettings} />}
+          {profileData && (
+            <Suspense fallback={<PortfolioLoading />}>
+              <ModernPortfolio 
+                profileData={profileData} 
+                onEdit={handleEdit} 
+                initialSiteSettings={siteSettings} 
+              />
+            </Suspense>
+          )}
         </div>
       )}
     </div>

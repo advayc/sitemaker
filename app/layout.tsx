@@ -1,9 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
 import "./globals.css"
-
-const inter = Inter({ subsets: ["latin"] })
+import { WebVitals } from "@/components/web-vitals"
 
 export const metadata: Metadata = {
   title: "Personal Website Generator | Create Professional Portfolios",
@@ -54,17 +52,20 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-  },
-  themeColor: '#000000',
   verification: {
   },
   icons: {
     icon: '/pc.svg',
     apple: '/pc.svg',
   },
+}
+
+export function generateViewport() {
+  return {
+    width: 'device-width',
+    initialScale: 1,
+    themeColor: '#000000',
+  }
 }
 
 export default function RootLayout({
@@ -77,7 +78,8 @@ export default function RootLayout({
       <head>
         <link rel="canonical" href={process.env.NEXT_PUBLIC_BASE_URL || 'https://sitemaker-beta.vercel.app/' ||'http://localhost:3000'} />
       </head>
-      <body className={inter.className}>
+      <body className="font-inter">
+        <WebVitals />
         {children}
         <script
           type="application/ld+json"
