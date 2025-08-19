@@ -1,6 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
+import { WebVitals } from "@/components/web-vitals"
 
 export const metadata: Metadata = {
   title: "Personal Website Generator | Create Professional Portfolios",
@@ -78,6 +79,7 @@ export default function RootLayout({
         <link rel="canonical" href={process.env.NEXT_PUBLIC_BASE_URL || 'https://sitemaker-beta.vercel.app/' ||'http://localhost:3000'} />
       </head>
       <body className="font-inter">
+        <WebVitals />
         {children}
         <script
           type="application/ld+json"

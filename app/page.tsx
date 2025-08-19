@@ -1,11 +1,20 @@
 "use client"
 
-import { useState, useCallback, memo } from "react"
+import { useState, useCallback, memo, lazy, Suspense } from "react"
 import { UploadArea } from "@/components/upload-area"
-import { ModernPortfolio } from "@/components/modern-portfolio"
 import { defaultSiteSettings } from "@/types/site-settings"
 import { parseFile } from "@/lib/file-parser"
 import type { ProfileData } from "@/types/profile"
+
+// Lazy load the ModernPortfolio component to reduce initial bundle size
+const ModernPortfolio = lazy(() => import("@/components/modern-portfolio").then(module => ({ default: module.ModernPortfolio })))
+
+// Simple loading component
+const PortfolioLoading = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+  </div>
+)
 
 // Memoized component for upload view
 const UploadView = memo(({ 
@@ -113,11 +122,13 @@ export default function Home() {
       ) : (
         <div className="min-h-screen">
           {profileData && (
-            <ModernPortfolio 
-              profileData={profileData} 
-              onEdit={handleEdit} 
-              initialSiteSettings={siteSettings} 
-            />
+            <Suspense fallback={<PortfolioLoading />}>
+              <ModernPortfolio 
+                profileData={profileData} 
+                onEdit={handleEdit} 
+                initialSiteSettings={siteSettings} 
+              />
+            </Suspense>
           )}
         </div>
       )}
