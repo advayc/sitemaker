@@ -30,6 +30,7 @@ export const generateWebsiteHTML = (data: ProfileData, settings?: Partial<SiteSe
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${data.name} - Personal Website</title>
     <meta name="description" content="${data.summary || `Professional portfolio of ${data.name}. ${data.title || 'Software Developer'} with expertise in modern technologies.`}">
     <meta name="keywords" content="${[data.name, data.title, ...(data.skills || [])].filter(Boolean).join(', ')}">
     <meta name="author" content="${data.name}">
@@ -40,7 +41,7 @@ export const generateWebsiteHTML = (data: ProfileData, settings?: Partial<SiteSe
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="profile">
     <meta property="og:title" content="${data.name} - ${data.title || 'Professional Portfolio'}">
-    <meta property="og:description" content="${data.summary || `Professional portfolio of ${data.name}. ${data.title || 'Software Developer'} with expertise in modern technologies.`}">
+    <meta property="og:description" content="${data.summary || `Professional portfolio of ${data.name}. ${data.title} with expertise in modern technologies.`}">
     <meta property="og:site_name" content="${data.name} Portfolio">
     <meta property="profile:first_name" content="${data.name.split(' ')[0] || data.name}">
     <meta property="profile:last_name" content="${data.name.split(' ').slice(1).join(' ') || ''}">
@@ -48,7 +49,7 @@ export const generateWebsiteHTML = (data: ProfileData, settings?: Partial<SiteSe
     <!-- Twitter -->
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="${data.name} - ${data.title || 'Professional Portfolio'}">
-    <meta name="twitter:description" content="${data.summary || `Professional portfolio of ${data.name}. ${data.title || 'Software Developer'} with expertise in modern technologies.`}">
+    <meta name="twitter:description" content="${data.summary || `Professional portfolio of ${data.name}. ${data.title} with expertise in modern technologies.`}">
     
     <!-- Additional SEO -->
     <meta name="application-name" content="${data.name} Portfolio">
