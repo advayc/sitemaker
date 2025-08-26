@@ -31,6 +31,67 @@ export const generateWebsiteHTML = (data: ProfileData, settings?: Partial<SiteSe
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${data.name} - Personal Website</title>
+    <meta name="description" content="${data.summary || `Professional portfolio of ${data.name}. ${data.title || 'Software Developer'} with expertise in modern technologies.`}">
+    <meta name="keywords" content="${[data.name, data.title, ...(data.skills || [])].filter(Boolean).join(', ')}">
+    <meta name="author" content="${data.name}">
+    <meta name="robots" content="index, follow">
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="format-detection" content="telephone=no, email=no, address=no">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="profile">
+    <meta property="og:title" content="${data.name} - ${data.title || 'Professional Portfolio'}">
+    <meta property="og:description" content="${data.summary || `Professional portfolio of ${data.name}. ${data.title} with expertise in modern technologies.`}">
+    <meta property="og:site_name" content="${data.name} Portfolio">
+    <meta property="profile:first_name" content="${data.name.split(' ')[0] || data.name}">
+    <meta property="profile:last_name" content="${data.name.split(' ').slice(1).join(' ') || ''}">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="${data.name} - ${data.title || 'Professional Portfolio'}">
+    <meta name="twitter:description" content="${data.summary || `Professional portfolio of ${data.name}. ${data.title} with expertise in modern technologies.`}">
+    
+    <!-- Additional SEO -->
+    <meta name="application-name" content="${data.name} Portfolio">
+    <meta name="apple-mobile-web-app-title" content="${data.name}">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="${applied.primaryColor}">
+    <meta name="msapplication-TileColor" content="${applied.primaryColor}">
+    
+    <title>${data.name} - ${data.title || 'Professional Portfolio'}</title>
+    
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "${data.name}",
+        "jobTitle": "${data.title || 'Professional'}",
+        "description": "${data.summary || `Professional portfolio of ${data.name}`}",
+        ${data.email ? `"email": "${data.email}",` : ''}
+        ${data.phone ? `"telephone": "${data.phone}",` : ''}
+        ${data.location ? `"address": {"@type": "PostalAddress", "addressLocality": "${data.location}"},` : ''}
+        "url": window.location.href,
+        ${data.skills && data.skills.length > 0 ? `"skills": ${JSON.stringify(data.skills)},` : ''}
+        "alumniOf": [
+            ${(data.education || []).map(edu => `{
+                "@type": "Organization",
+                "name": "${edu.institution || ''}",
+                "description": "${edu.degree || ''} in ${edu.field || ''}"
+            }`).join(',')}
+        ],
+        "worksFor": [
+            ${(data.experience || []).slice(0, 1).map(exp => `{
+                "@type": "Organization", 
+                "name": "${exp.company || ''}",
+                "description": "${exp.position || ''}"
+            }`).join(',')}
+        ]
+    }
+    </script>
+    
     <style>
         * {
             margin: 0;
