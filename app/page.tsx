@@ -32,7 +32,7 @@ const UploadView = memo(({
     <div className="text-center mb-12">
       <h1 className="text-4xl font-bold text-gray-900 mb-4">Create Your Personal Website</h1>
       <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-        Upload your resume or CV to instantly generate a modern, professional website that showcases your experience and skills.
+        Upload your resume or CV to instantly generate a modern, website that showcases your experience, skills, projects and more!
       </p>
     </div>
 

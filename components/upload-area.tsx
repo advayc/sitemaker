@@ -80,7 +80,7 @@ export function UploadArea({ onFileUpload, isUploading, uploadProgress }: Upload
             </div>
 
             <div className="space-y-2">
-              <h3 className="text-xl font-semibold text-gray-900">Upload your resume or CV</h3>
+              <h3 className="text-xl font-semibold text-gray-900">Upload your resume</h3>
               <p className="text-gray-600">Drag and drop your file here, or click to browse</p>
             </div>
 
@@ -135,7 +135,6 @@ export function UploadArea({ onFileUpload, isUploading, uploadProgress }: Upload
       </div>
 
       <div className="mt-6 text-center text-sm text-gray-500">
-        <p>Supported formats: PDF resume, DOCX resume, Images (JPG, PNG), LinkedIn JSON/XML export</p>
         <p className="mt-1">Your data is processed securely and never stored permanently</p>
       </div>
       <div className="mt-4 text-center text-sm text-gray-700 font-semibold">
