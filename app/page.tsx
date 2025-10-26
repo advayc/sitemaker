@@ -85,7 +85,7 @@ export default function Home() {
       setProfileData(data)
       setSiteSettings({ 
         ...defaultSiteSettings, 
-        fontFamily: 'var(--font-inter)' // Use system font for better performance
+        fontFamily: defaultSiteSettings.fontFamily // Use default monospace font
       })
       setUploadProgress(100)
 

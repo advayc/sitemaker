@@ -208,48 +208,79 @@ async function ensureMammoth(): Promise<{ extractRawText: (input: { buffer: Buff
 }
 
 /**
- * Extract text from PDF using a faster approach - convert to base64 and use GPT-4o with PDF support
+ * Extract text from PDF using OpenAI's file API
  */
 async function extractTextFromPdfWithOpenAI(buffer: Buffer): Promise<string> {
   const client = getClient()
   
-  // Convert buffer to base64
-  const base64Pdf = buffer.toString('base64')
+  // Create a File object from the buffer using Uint8Array
+  const uint8Array = new Uint8Array(buffer)
+  const blob = new Blob([uint8Array], { type: "application/pdf" })
+  const file = new File([blob], "resume.pdf", { type: "application/pdf" })
   
+  // Upload the file to OpenAI
+  const uploadedFile = await client.files.create({
+    file: file,
+    purpose: "assistants",
+  })
+
   try {
-    // Use GPT-4o which supports PDF input directly
-    const completion = await client.chat.completions.create({
-      model: "gpt-4o-2024-08-06", // This model supports PDF inputs
+    // Create a temporary assistant
+    const assistant = await client.beta.assistants.create({
+      name: "PDF Text Extractor",
+      instructions: "Extract all text from the PDF file and return it exactly as it appears.",
+      model: "gpt-4o-mini",
+      tools: [{ type: "file_search" }],
+    })
+
+    // Create a thread with the file
+    const thread = await client.beta.threads.create({
       messages: [
         {
           role: "user",
-          content: [
+          content: "Extract all the text from this PDF file and return it exactly as written. Include all information.",
+          attachments: [
             {
-              type: "text",
-              text: "Extract all text from this PDF document exactly as it appears. Return only the extracted text, no commentary or formatting."
+              file_id: uploadedFile.id,
+              tools: [{ type: "file_search" }],
             },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:application/pdf;base64,${base64Pdf}`
-              }
-            }
-          ]
-        }
+          ],
+        },
       ],
-      max_tokens: 4096,
-      temperature: 0.1,
     })
 
-    const extractedText = completion.choices[0]?.message?.content || ""
-    
-    if (!extractedText.trim()) {
-      throw new Error("No text extracted from PDF")
+    // Run the assistant and poll for completion
+    const run = await client.beta.threads.runs.createAndPoll(thread.id, {
+      assistant_id: assistant.id,
+    })
+
+    if (run.status !== "completed") {
+      throw new Error(`Assistant run ${run.status}: ${run.last_error?.message || "Unknown error"}`)
     }
+
+    // Get the messages
+    const messages = await client.beta.threads.messages.list(thread.id)
+    const assistantMessage = messages.data.find((msg) => msg.role === "assistant")
+
+    if (!assistantMessage || !assistantMessage.content[0]) {
+      throw new Error("No response from assistant")
+    }
+
+    const content = assistantMessage.content[0]
+    const extractedText = content.type === "text" ? content.text.value : ""
+
+    // Cleanup
+    await client.beta.assistants.delete(assistant.id)
+    await client.files.delete(uploadedFile.id)
 
     return extractedText
   } catch (error) {
-    console.error("PDF extraction error:", error)
+    // Cleanup on error
+    try {
+      await client.files.delete(uploadedFile.id)
+    } catch {
+      // Ignore cleanup errors
+    }
     throw error
   }
 }
