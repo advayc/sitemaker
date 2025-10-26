@@ -603,7 +603,7 @@ export function ModernPortfolio({ profileData: initialData, onEdit, initialSiteS
               ))}
             </div>
           ) : (
-            <p className="text-gray-500 italic">No skills added yet. Click "Add" to add your first skill.</p>
+            <p className="text-gray-500 italic">No skills added yet. Click &quot;Add&quot; to add your first skill.</p>
           )}
         </section>
 

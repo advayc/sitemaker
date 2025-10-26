@@ -1,198 +1,37 @@
+import { Buffer } from "node:buffer"
+import OpenAI from "openai"
+import type { ChatCompletionContentPart, ChatCompletionMessageParam } from "openai/resources/chat/completions"
 import type { ProfileData } from "@/types/profile"
 
-// Try environment variable first, then fallback to the provided key
-const GEMINI_API_KEY = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY
+const OPENAI_MODEL = process.env.OPENAI_MODEL || process.env.NEXT_PUBLIC_OPENAI_MODEL || "gpt-4o-mini"
 
-/**
- * Extract JSON from an LLM answer that may contain code-fences or prose.
- */
-function extractJson(raw: string): any {
-  // If the model respected response_format we already have JSON.
-  try {
-    return JSON.parse(raw)
-  } catch {
-    /* continue */
+let cachedClient: OpenAI | null = null
+
+function getClient(): OpenAI {
+  if (!OPENAI_API_KEY) {
+    throw new Error("OpenAI API key is not configured. Set OPENAI_API_KEY in your environment.")
   }
 
-  // Remove common code-fence markers
-  const stripped = raw.replace(/```json|```/g, "").trim()
-
-  try {
-    return JSON.parse(stripped)
-  } catch {
-    /* continue */
+  if (!cachedClient) {
+    cachedClient = new OpenAI({ apiKey: OPENAI_API_KEY })
   }
 
-  // Fallback: locate the first { ... } block
-  const match = stripped.match(/{[\s\S]*}/)
-  if (match) {
-    try {
-      return JSON.parse(match[0])
-    } catch {
-      /* continue */
-    }
-  }
-
-  throw new Error("Unable to extract JSON from AI response")
+  return cachedClient
 }
 
-export async function parseWithAI(content: string, fileType: string): Promise<ProfileData> {
-  // Debug API key (don't log full key in production)
-  console.log("Using API key:", GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 10)}...` : "NOT SET")
-  
-  if (!GEMINI_API_KEY || GEMINI_API_KEY === "your-actual-api-key-here") {
-    throw new Error("Gemini API key is not configured. Please set NEXT_PUBLIC_GEMINI_API_KEY in .env.local")
-  }
+const SYSTEM_PROMPT = `You are an expert assistant that extracts structured professional profile data from resumes, CVs, LinkedIn exports, and similar documents. 
 
-  const prompt = `
-You are an expert at parsing professional profiles and resumes. Extract the following information from the provided ${fileType} content and return it as a JSON object with this exact structure:
+CRITICAL: You MUST respond with ONLY a valid JSON object. Do not include any explanatory text, markdown formatting, or code blocks. Return raw JSON only.
 
+The JSON object must match this exact schema:
 {
   "name": "Full Name",
   "title": "Professional Title/Current Role",
   "email": "email@example.com",
   "phone": "phone number if available",
   "location": "City, State/Province",
-  "summary": "Professional summary or bio",
-  "experience": [
-    {
-      "company": "Company Name",
-      "position": "Job Title",
-      "startDate": "Month Year",
-      "endDate": "Month Year or Present",
-      "description": "Job description and achievements",
-      "companyUrl": "company website if mentioned or can be inferred"
-    }
-  ],
-  "education": [
-    {
-      "institution": "School Name",
-      "degree": "Degree Type",
-      "field": "Field of Study",
-      "startDate": "Month Year",
-      "endDate": "Month Year",
-      "institutionUrl": "school website if can be inferred"
-    }
-  ],
-  "skills": ["skill1", "skill2", "skill3"],
-  "projects": [
-    {
-      "name": "Project Name",
-      "description": "Project description",
-      "technologies": ["tech1", "tech2"],
-      "url": "project url if available",
-      "githubUrl": "github url if available"
-    }
-  ],
-  "socialLinks": [
-    {
-      "platform": "LinkedIn",
-      "url": "profile url",
-      "username": "username"
-    }
-  ]
-}
-
-Important guidelines:
-- Extract ALL available information, don't leave fields empty unless truly not available
-- For dates, use "Month Year" format (e.g., "Jan 2023")
-- If current position, use "Present" for endDate
-- Infer company/institution URLs when possible (e.g., microsoft.com for Microsoft)
-- Extract skills as simple strings, not objects
-- Create a professional summary that is EXACTLY 2 sentences: first sentence about current role/expertise, second sentence about goals/impact
-- For social links, extract LinkedIn, GitHub, Twitter, personal websites, etc. - ensure URLs are complete and properly formatted
-- Return only valid JSON, no markdown formatting
-
-IMPORTANT: The summary field must be exactly 2 concise sentences that sound professional and engaging.
-
-Content to parse:
-${content}
-`
-
-  const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      contents: [
-        {
-          parts: [
-            {
-              text: prompt
-            }
-          ]
-        }
-      ],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 2048,
-        topP: 0.8,
-        topK: 10
-      }
-    }),
-  })
-
-  if (!res.ok) {
-    const errorText = await res.text()
-    throw new Error(`Gemini AI request failed: ${res.status} ${res.statusText} - ${errorText}`)
-  }
-
-  const data = await res.json()
-  const responseContent = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ""
-
-  if (!responseContent) {
-    throw new Error("Empty response from AI")
-  }
-
-  const parsed = extractJson(responseContent)
-
-  // Normalize the data to ensure arrays are properly formatted
-  const normalized = {
-    name: parsed.name || "Unknown",
-    title: parsed.title || "",
-    email: parsed.email || "",
-    phone: parsed.phone || "",
-    location: parsed.location || "",
-    summary: parsed.summary || "",
-    experience: Array.isArray(parsed.experience) ? parsed.experience : [],
-    education: Array.isArray(parsed.education) ? parsed.education : [],
-    skills: Array.isArray(parsed.skills)
-      ? parsed.skills.map((skill: any) =>
-          typeof skill === "string" ? skill : skill.name || skill.skill || String(skill),
-        )
-      : [],
-    projects: Array.isArray(parsed.projects)
-      ? parsed.projects.map((project: any) => ({
-          ...project,
-          technologies: Array.isArray(project.technologies) ? project.technologies : [],
-        }))
-      : [],
-    socialLinks: Array.isArray(parsed.socialLinks) ? parsed.socialLinks : [],
-  }
-
-  return normalized as ProfileData
-}
-
-export async function parseWithAIFromFile(base64Data: string, mimeType: string, fileType: string): Promise<ProfileData> {
-  // Debug API key (don't log full key in production)
-  console.log("Using API key:", GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 10)}...` : "NOT SET")
-  
-  if (!GEMINI_API_KEY || GEMINI_API_KEY === "your-actual-api-key-here") {
-    throw new Error("Gemini API key is not configured. Please set NEXT_PUBLIC_GEMINI_API_KEY in .env.local")
-  }
-
-  const prompt = `
-Analyze this ${fileType} and extract the following information in JSON format. Be thorough and accurate:
-
-{
-  "name": "Full name of the person",
-  "title": "Professional title or desired position",
-  "email": "email address if found",
-  "phone": "phone number if found",
-  "location": "City, State/Province/Country",
-  "summary": "Brief professional summary (2-3 sentences)",
+  "summary": "Exactly 2 sentences: first sentence describes current role/expertise, second sentence highlights goals/impact",
   "experience": [
     {
       "company": "Company Name",
@@ -200,251 +39,354 @@ Analyze this ${fileType} and extract the following information in JSON format. B
       "startDate": "Month Year",
       "endDate": "Month Year or Present",
       "description": "Detailed description of responsibilities and achievements",
-      "companyUrl": "company website if can be inferred"
+      "companyUrl": "https://company.com if available or can be inferred"
     }
   ],
   "education": [
     {
-      "institution": "School/University name",
+      "institution": "Institution Name",
       "degree": "Degree Type",
-      "field": "Field of study",
+      "field": "Field of Study",
       "startDate": "Month Year",
       "endDate": "Month Year",
-      "institutionUrl": "school website if can be inferred"
+      "institutionUrl": "https://institution.edu if available or can be inferred"
     }
   ],
-  "skills": ["skill1", "skill2", "skill3"],
+  "skills": ["skill1", "skill2", ...],
   "projects": [
     {
       "name": "Project Name",
       "description": "Project description",
       "technologies": ["tech1", "tech2"],
-      "url": "project url if available",
-      "githubUrl": "github url if available"
-    }
-  ],
-  "socialLinks": [
-    {
-      "platform": "Platform Name",
-      "url": "profile url",
-      "username": "username"
-    }
-  ]
-}
-
-IMPORTANT: 
-- Limit the skills array to a maximum of 10 skills. Choose the most relevant and important skills.
-- Extract all information accurately from the resume. If some information is not available, use reasonable defaults or leave empty.
-- Make sure the JSON is valid and complete.
-- For dates, use "Month Year" format (e.g., "Jan 2023")
-- If current position, use "Present" for endDate
-- The summary field must be exactly 2 concise sentences: first sentence about current role/expertise, second sentence about goals/impact
-- For social links, ensure URLs are complete and properly formatted (include https:// if missing)
-
-Please extract all information accurately from the file.
-`
-
-  const requestBody = {
-    contents: [
-      {
-        parts: [
-          {
-            text: prompt
-          },
-          {
-            inline_data: {
-              mime_type: mimeType,
-              data: base64Data
-            }
-          }
-        ]
-      }
-    ],
-    generationConfig: {
-      temperature: 0.1,
-      topK: 1,
-      topP: 1,
-      maxOutputTokens: 2048,
-    }
-  }
-
-  const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
-  })
-
-  if (!res.ok) {
-    const errorText = await res.text()
-    throw new Error(`Gemini AI request failed: ${res.status} ${res.statusText} - ${errorText}`)
-  }
-
-  const data = await res.json()
-  
-  if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-    throw new Error('Invalid response from Gemini API')
-  }
-
-  const responseContent = data.candidates[0].content.parts[0].text
-
-  if (!responseContent) {
-    throw new Error("Empty response from AI")
-  }
-
-  const parsed = extractJson(responseContent)
-
-  // Normalize the data to ensure arrays are properly formatted and match ProfileData interface
-  const normalized = {
-    name: parsed.name || "Unknown",
-    title: parsed.title || "",
-    email: parsed.email || "",
-    phone: parsed.phone || "",
-    location: parsed.location || "",
-    summary: parsed.summary || "",
-    experience: Array.isArray(parsed.experience) ? parsed.experience : [],
-    education: Array.isArray(parsed.education) ? parsed.education : [],
-    skills: Array.isArray(parsed.skills)
-      ? parsed.skills.slice(0, 10).map((skill: any) =>
-          typeof skill === "string" ? skill : skill.name || skill.skill || String(skill),
-        )
-      : [],
-    projects: Array.isArray(parsed.projects)
-      ? parsed.projects.map((project: any) => ({
-          ...project,
-          technologies: Array.isArray(project.technologies) ? project.technologies : [],
-        }))
-      : [],
-    socialLinks: Array.isArray(parsed.socialLinks) ? parsed.socialLinks : [],
-  }
-
-  return normalized as ProfileData
-}
-
-export async function parseLinkedInProfile(linkedinUrl: string): Promise<ProfileData> {
-  // Debug API key (don't log full key in production)
-  console.log("Using API key:", GEMINI_API_KEY ? `${GEMINI_API_KEY.substring(0, 10)}...` : "NOT SET")
-  
-  if (!GEMINI_API_KEY || GEMINI_API_KEY === "your-actual-api-key-here") {
-    throw new Error("Gemini API key is not configured. Please set NEXT_PUBLIC_GEMINI_API_KEY in .env.local")
-  }
-
-  const prompt = `
-Based on this LinkedIn profile URL: ${linkedinUrl}
-
-Create a realistic professional profile with the following JSON structure:
-
-{
-  "name": "Professional Name",
-  "title": "Current Job Title",
-  "email": "email@example.com",
-  "phone": "+1234567890",
-  "location": "City, State",
-  "summary": "Professional summary paragraph",
-  "experience": [
-    {
-      "company": "Company Name",
-      "position": "Job Title",
-      "startDate": "Jan 2023",
-      "endDate": "Present",
-      "description": "Job responsibilities and achievements",
-      "companyUrl": "https://company.com"
-    }
-  ],
-  "education": [
-    {
-      "institution": "University Name",
-      "degree": "Bachelor's",
-      "field": "Computer Science",
-      "startDate": "Sep 2019",
-      "endDate": "May 2023",
-      "institutionUrl": "https://university.edu"
-    }
-  ],
-  "skills": ["JavaScript", "React", "Node.js"],
-  "projects": [
-    {
-      "name": "Project Name",
-      "description": "Project description",
-      "technologies": ["React", "TypeScript"],
-      "url": "https://project.com",
-      "githubUrl": "https://github.com/user/project"
+      "url": "https://project.com if available",
+      "githubUrl": "https://github.com/... if available"
     }
   ],
   "socialLinks": [
     {
       "platform": "LinkedIn",
-      "url": "${linkedinUrl}",
+      "url": "https://linkedin.com/in/example",
       "username": "username"
     }
   ]
 }
 
-Make it realistic for a professional in tech/business. Return only the JSON object.
-`
+Guidelines:
+- Return ALL information available in the source, infer reputable URLs when the company or institution is well-known.
+- Dates must use the format "Mon YYYY" (e.g., "Jan 2024"). Use "Present" for current roles.
+- Limit the skills array to at most 10 high-impact skills ordered by relevance.
+- Ensure URLs are absolute (include https://) and summaries are polished, professional, and exactly two sentences.
+- Respond with JSON only—no commentary, markdown, or code fences.`
 
-  const res = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      contents: [
+/**
+ * Extract JSON from an LLM answer that may contain code-fences or prose.
+ */
+function extractJson(raw: string): any {
+  // Try parsing the raw string directly
+  try {
+    return JSON.parse(raw)
+  } catch {
+    /* continue */
+  }
+
+  // Remove common markdown code fence patterns
+  const stripped = raw
+    .replace(/```json\s*/g, "")
+    .replace(/```\s*/g, "")
+    .trim()
+
+  try {
+    return JSON.parse(stripped)
+  } catch {
+    /* continue */
+  }
+
+  // Try to find JSON object in the response
+  const jsonMatch = stripped.match(/{[\s\S]*}/);
+  if (jsonMatch) {
+    try {
+      return JSON.parse(jsonMatch[0])
+    } catch {
+      /* continue */
+    }
+  }
+
+  // Try to find JSON array in the response
+  const arrayMatch = stripped.match(/\[[\s\S]*\]/);
+  if (arrayMatch) {
+    try {
+      return JSON.parse(arrayMatch[0])
+    } catch {
+      /* continue */
+    }
+  }
+
+  console.error("Failed to extract JSON from response:", raw.substring(0, 500))
+  throw new Error("Unable to extract JSON from AI response. Please try again or use a different file format.")
+}
+
+function normalizeProfile(parsed: any): ProfileData {
+  // Ensure we have a valid object
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error("Invalid profile data structure received from AI")
+  }
+
+  return {
+    name: parsed?.name || "Unknown",
+    title: parsed?.title || "",
+    email: parsed?.email || "",
+    phone: parsed?.phone || "",
+    location: parsed?.location || "",
+    summary: parsed?.summary || "",
+    experience: Array.isArray(parsed?.experience) ? parsed.experience : [],
+    education: Array.isArray(parsed?.education) ? parsed.education : [],
+    skills: Array.isArray(parsed?.skills)
+      ? parsed.skills
+          .slice(0, 10)
+          .map((skill: any) => (typeof skill === "string" ? skill : skill?.name || skill?.skill || String(skill)))
+      : [],
+    projects: Array.isArray(parsed?.projects)
+      ? parsed.projects.map((project: any) => ({
+          ...project,
+          technologies: Array.isArray(project?.technologies) ? project.technologies : [],
+        }))
+      : [],
+    socialLinks: Array.isArray(parsed?.socialLinks) ? parsed.socialLinks : [],
+  }
+}
+
+async function runChat(messages: ChatCompletionMessageParam[], maxTokens = 2048): Promise<ProfileData> {
+  const client = getClient()
+  
+  try {
+    const completion = await client.chat.completions.create({
+      model: OPENAI_MODEL,
+      messages,
+      temperature: 0.1,
+      max_tokens: maxTokens,
+      response_format: { type: "json_object" },
+    })
+
+    const message = completion.choices?.[0]?.message
+
+    if (!message) {
+      throw new Error("Empty response from OpenAI")
+    }
+
+    const responseContent = Array.isArray(message.content)
+      ? message.content
+          .map((part) => {
+            if (typeof part === "string") {
+              return part
+            }
+            if ("text" in part && typeof part.text === "string") {
+              return part.text
+            }
+            return ""
+          })
+          .join("")
+      : message.content ?? ""
+
+    if (!responseContent) {
+      throw new Error("Empty response from OpenAI")
+    }
+
+    const parsed = extractJson(responseContent)
+    return normalizeProfile(parsed)
+  } catch (error) {
+    console.error("OpenAI API error:", error)
+    if (error instanceof Error) {
+      throw error
+    }
+    throw new Error("Failed to parse profile with AI")
+  }
+}
+
+async function ensureMammoth(): Promise<{ extractRawText: (input: { buffer: Buffer }) => Promise<{ value: string }> }> {
+  const mammothModule = await import("mammoth")
+  return mammothModule as unknown as { extractRawText: (input: { buffer: Buffer }) => Promise<{ value: string }> }
+}
+
+/**
+ * Extract text from PDF using a faster approach - convert to base64 and use GPT-4o with PDF support
+ */
+async function extractTextFromPdfWithOpenAI(buffer: Buffer): Promise<string> {
+  const client = getClient()
+  
+  // Convert buffer to base64
+  const base64Pdf = buffer.toString('base64')
+  
+  try {
+    // Use GPT-4o which supports PDF input directly
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-2024-08-06", // This model supports PDF inputs
+      messages: [
         {
-          parts: [
+          role: "user",
+          content: [
             {
-              text: prompt
+              type: "text",
+              text: "Extract all text from this PDF document exactly as it appears. Return only the extracted text, no commentary or formatting."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:application/pdf;base64,${base64Pdf}`
+              }
             }
           ]
         }
       ],
-      generationConfig: {
-        temperature: 0.3,
-        maxOutputTokens: 2048,
-        topP: 0.8,
-        topK: 10
+      max_tokens: 4096,
+      temperature: 0.1,
+    })
+
+    const extractedText = completion.choices[0]?.message?.content || ""
+    
+    if (!extractedText.trim()) {
+      throw new Error("No text extracted from PDF")
+    }
+
+    return extractedText
+  } catch (error) {
+    console.error("PDF extraction error:", error)
+    throw error
+  }
+}
+
+export async function parseProfileFromText(content: string, fileType: string): Promise<ProfileData> {
+  if (!content.trim()) {
+    throw new Error("No content provided for OpenAI parsing")
+  }
+
+  // Limit content length to prevent token overflow
+  const maxLength = 20000 // Approximately 5000 tokens
+  const trimmedContent = content.length > maxLength 
+    ? content.substring(0, maxLength) + "\n[Content truncated due to length]"
+    : content
+
+  const messages: ChatCompletionMessageParam[] = [
+    { role: "system", content: SYSTEM_PROMPT },
+    {
+      role: "user",
+      content: `Source type: ${fileType}.\n\nExtract the full profile from the following content:\n\n${trimmedContent}`,
+    },
+  ]
+
+  return runChat(messages)
+}
+
+export async function parseProfileFromDocument(base64Data: string, mimeType: string, fileType: string): Promise<ProfileData> {
+  if (!base64Data) {
+    throw new Error("No file data provided for parsing")
+  }
+
+  // For PDFs, extract text using OpenAI's file API
+  if (mimeType === "application/pdf") {
+    try {
+      const buffer = Buffer.from(base64Data, "base64")
+      const text = await extractTextFromPdfWithOpenAI(buffer)
+
+      if (!text || text.trim().length === 0) {
+        throw new Error("Unable to extract text from PDF file. The PDF may be image-based or encrypted.")
       }
-    }),
-  })
 
-  if (!res.ok) {
-    const errorText = await res.text()
-    throw new Error(`Gemini AI request failed: ${res.status} ${res.statusText} - ${errorText}`)
+      return parseProfileFromText(text, fileType || "PDF resume")
+    } catch (error) {
+      console.error("PDF parsing error:", error)
+      if (error instanceof Error && error.message.includes("Unable to extract text")) {
+        throw error
+      }
+      throw new Error("Failed to parse PDF file. Please ensure it contains readable text.")
+    }
   }
 
-  const data = await res.json()
-  const responseContent = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? ""
-
-  if (!responseContent) {
-    throw new Error("Empty response from AI")
+  // For images, extract text using OpenAI (not vision API - using file search)
+  if (mimeType.startsWith("image/")) {
+    try {
+      // Convert image to text using OCR or similar approach
+      // For now, throw a helpful error
+      throw new Error("Image files are not yet supported. Please convert your resume to PDF or DOCX format.")
+    } catch (error) {
+      console.error("Image parsing error:", error)
+      throw error instanceof Error ? error : new Error("Failed to parse image file.")
+    }
   }
 
-  const parsed = extractJson(responseContent)
+  // For DOCX files, extract text first then parse with OpenAI
+  if (mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+    try {
+      const buffer = Buffer.from(base64Data, "base64")
+      const mammoth = await ensureMammoth()
+      const { value } = await mammoth.extractRawText({ buffer })
+      const text = value?.trim()
 
-  // Normalize the data to ensure arrays are properly formatted
-  const normalized = {
-    name: parsed.name || "Professional Name",
-    title: parsed.title || "Software Developer",
-    email: parsed.email || "contact@example.com",
-    phone: parsed.phone || "",
-    location: parsed.location || "San Francisco, CA",
-    summary: parsed.summary || "Experienced professional with expertise in technology and innovation.",
-    experience: Array.isArray(parsed.experience) ? parsed.experience : [],
-    education: Array.isArray(parsed.education) ? parsed.education : [],
-    skills: Array.isArray(parsed.skills)
-      ? parsed.skills.map((skill: any) =>
-          typeof skill === "string" ? skill : skill.name || skill.skill || String(skill),
-        )
-      : [],
-    projects: Array.isArray(parsed.projects)
-      ? parsed.projects.map((project: any) => ({
-          ...project,
-          technologies: Array.isArray(project.technologies) ? project.technologies : [],
-        }))
-      : [],
-    socialLinks: Array.isArray(parsed.socialLinks) ? parsed.socialLinks : [],
+      if (!text) {
+        throw new Error("Unable to extract text from DOCX file. Please ensure the document contains selectable text.")
+      }
+
+      return parseProfileFromText(text, fileType || "Word document resume")
+    } catch (error) {
+      console.error("DOCX parsing error:", error)
+      if (error instanceof Error && error.message.includes("Unable to extract text")) {
+        throw error
+      }
+      throw new Error("Failed to parse DOCX file. Please ensure it's a valid Word document.")
+    }
   }
 
-  return normalized as ProfileData
+  if (mimeType === "application/msword") {
+    throw new Error("Microsoft Word .doc files are not supported. Please convert the resume to PDF or DOCX.")
+  }
+
+  throw new Error(`Unsupported document type: ${mimeType}`)
+}
+
+export async function parseProfileFromImage(base64Data: string, mimeType: string, fileType: string): Promise<ProfileData> {
+  if (!base64Data) {
+    throw new Error("No image data provided for OpenAI parsing")
+  }
+
+  try {
+    const dataUrl = `data:${mimeType};base64,${base64Data}`
+
+    const visionPrompt: ChatCompletionContentPart[] = [
+      {
+        type: "text",
+        text: `The attached ${fileType} image contains a resume or professional profile. Carefully transcribe the text and return a JSON object that follows the required schema. If information is missing, leave the fields empty.`,
+      },
+      {
+        type: "image_url",
+        image_url: {
+          url: dataUrl,
+        },
+      },
+    ]
+
+    const messages: ChatCompletionMessageParam[] = [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: visionPrompt },
+    ]
+
+    return runChat(messages, 4096) // Increase token limit for vision tasks
+  } catch (error) {
+    console.error("Image parsing error:", error)
+    throw new Error("Failed to parse image. Please ensure the image contains clear, readable text.")
+  }
+}
+
+export async function parseLinkedInProfile(linkedinUrl: string): Promise<ProfileData> {
+  if (!linkedinUrl) {
+    throw new Error("LinkedIn URL is required")
+  }
+
+  const messages: ChatCompletionMessageParam[] = [
+    { role: "system", content: SYSTEM_PROMPT },
+    {
+      role: "user",
+      content: `Create a realistic professional profile for this LinkedIn URL: ${linkedinUrl}. Use plausible roles, achievements, and links that match a seasoned technology professional.`,
+    },
+  ]
+
+  return runChat(messages)
 }

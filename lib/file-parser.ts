@@ -1,65 +1,53 @@
 import type { ProfileData } from "@/types/profile"
-import { parseWithAI, parseWithAIFromFile } from "./ai-parser"
 
-// Convert file to base64 for binary file processing
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      // Remove the data URL prefix to get just the base64 string
-      const base64 = result.split(',')[1];
-      resolve(base64);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-};
-
+/**
+ * Main function to parse a file and extract profile data using OpenAI via API route
+ */
 export async function parseFile(file: File): Promise<ProfileData> {
-  try {
-    let content = ""
-    let fileType = ""
-    let base64Data = ""
+  const fileType = file.type
+  const fileName = file.name.toLowerCase()
 
-    // Handle text-based files
-    if (file.type === "application/json") {
-      content = await file.text()
-      fileType = "LinkedIn JSON export"
-    } else if (file.type === "application/xml" || file.type === "text/xml") {
-      content = await file.text()
-      fileType = "LinkedIn XML export"
-    } else if (file.type.startsWith("text/")) {
-      content = await file.text()
-      fileType = "text file"
-    } 
-    // Handle binary files (PDF, images, DOCX) with Gemini Vision API
-    else if (
-      file.type === "application/pdf" ||
-      file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-      file.type === "application/msword" ||
-      file.type.startsWith("image/")
-    ) {
-      base64Data = await fileToBase64(file)
-      fileType = file.type === "application/pdf" ? "PDF resume" : 
-                 file.type.includes("word") ? "Word document resume" :
-                 file.type.startsWith("image/") ? "resume image" : "document"
-      
-      // Use AI parser with file data for binary files
-      return await parseWithAIFromFile(base64Data, file.type, fileType)
-    } else {
-      throw new Error("Unsupported file type. Please upload a PDF, Word document, image, or text file.")
-    }
+  // Convert file to base64
+  const base64Data = await fileToBase64(file)
 
-    // For text-based files, check if content is available
-    if (!content.trim() && !base64Data) {
-      throw new Error("File appears to be empty")
-    }
+  // Call the API route to parse the file
+  const response = await fetch('/api/openai', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      base64Data,
+      mimeType: fileType,
+      fileType: file.name,
+    }),
+  })
 
-    // Use AI to parse text content
-    return await parseWithAI(content, fileType)
-  } catch (error) {
-    console.error("File parsing error:", error)
-    throw new Error(`Failed to parse file: ${error instanceof Error ? error.message : "Unknown error"}`)
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'Failed to parse file' }))
+    throw new Error(errorData.error || `Failed to parse file: ${response.statusText}`)
   }
+
+  const result = await response.json()
+  return result.profile
+}
+
+/**
+ * Convert a File to base64 string
+ */
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+        const base64 = reader.result.split(",")[1]
+        resolve(base64)
+      } else {
+        reject(new Error("Failed to read file as base64"))
+      }
+    }
+    reader.onerror = () => reject(new Error("Failed to read file"))
+    reader.readAsDataURL(file)
+  })
 }
