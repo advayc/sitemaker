@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     "professional website", "online portfolio", "resume to website",
     "portfolio maker", "website generator", "professional branding"
   ],
-  authors: [{ name: "SiteMaker", url: "https://sitemaker-beta.vercel.app" }],
+  authors: [{ name: "SiteMaker", url: "https://sitemaker.advay.ca" }],
   creator: "SiteMaker",
   publisher: "SiteMaker",
   applicationName: "SiteMaker",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://sitemaker-beta.vercel.app/' || "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://sitemaker.advay.ca' || "http://localhost:3000"),
   alternates: {
     canonical: "/",
   },
@@ -114,7 +114,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sitemaker-beta.vercel.app/' || 'http://localhost:3000'
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://sitemaker.advay.ca' || 'http://localhost:3000'
   
   const organizationSchema = {
     "@context": "https://schema.org",
